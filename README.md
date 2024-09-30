@@ -13,3 +13,10 @@ Data Preparation Bibek
 Running regression Bibek and Wajeeha
 data analysis Wajeeha and Bibek
 report writing Wajeeha and Bibek
+
+
+Things to be Done: 
+1. Data collection by week
+2. coding
+3. formating github
+4. regular fething and pushing 
