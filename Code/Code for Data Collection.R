@@ -1,12 +1,6 @@
-## Fama-Macbeth (1973) replication partial Codes ## 
-########################################################################################
-# Following is a partial code for replicating Fama-Macbeth (1973). 
-# The code below collects data between 1926 to 1968 and runs portfolio formation, initial 
-# estimation an testing for period 1 of Table 1.
-# The codes below uses some of the coding tricks we have learned in the class, Students
-# may get some ideas from these codes to do carryout their own replication project.
-########################################################################################
+## Fama-Macbeth (1973) replication partial 
 
+#Load necessaay libarary
 library(RPostgres)
 library(tidyverse)
 library(RSQLite)
@@ -16,7 +10,7 @@ library(purrr)
 library(modelsummary)
 library(tseries)
 
-
+# initiate conenction with WRDS
 wrds <- dbConnect(Postgres(),
                   host='wrds-pgdata.wharton.upenn.edu',
                   port=9737,
