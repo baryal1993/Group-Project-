@@ -57,3 +57,13 @@ dbWriteTable(MAF900_data,
              value = fm_data,
              overwrite = TRUE)
 
+fm_data <- fm_data |>select(permno,date,ret)|>inner_join(Fs_Idx, by = c("date"))|> arrange(permno,date)
+
+fm_data <- tbl(MAF900_data, "fm_ret")|> collect()
+
+Fs_Idx <- fm_data |> 
+  group_by(date) |> 
+  summarise(fsi_rm = mean(ret, na.rm = TRUE))
+
+fm_data <- fm_data |> 
+  left_join(Fs_Idx, by = "date")
