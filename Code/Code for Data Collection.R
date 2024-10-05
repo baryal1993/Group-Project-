@@ -46,3 +46,14 @@ fm_data <- FM_ret |> inner_join(
   fm_stockids |>
     select(permno, primexch), by = c("permno"))
 
+MAF900_data <- dbConnect(
+  SQLite(),
+  "data/MAF900_data.sqlite",
+  extended_types = TRUE)
+
+
+dbWriteTable(MAF900_data,
+             "fm_ret",
+             value = fm_data,
+             overwrite = TRUE)
+
