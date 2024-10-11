@@ -315,3 +315,12 @@ formatted_table %>%
     title = "Table 1: Portfolio Formation, Estimation, and Testing Periods",
     subtitle = "Period"
   )
+
+
+# Define estimation periods for the selected years
+estimation_periods <- list(
+  c("1934-01-01", "1938-12-31"),
+  c("1942-01-01", "1946-12-31"),
+  c("1950-01-01", "1954-12-31"),
+  c("1958-01-01", "1962-12-31")
+)
