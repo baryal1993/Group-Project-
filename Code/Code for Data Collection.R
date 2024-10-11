@@ -1,4 +1,4 @@
-## Fama-Macbeth (1973) replication partial 
+## Fama-Macbeth (1973) Replication Code
 
 #Load necessaay libarary
 library(RPostgres)
@@ -50,6 +50,7 @@ fm_data <- FM_ret |> inner_join(
   fm_stockids |>
     select(permno, primexch), by = c("permno"))
 
+# storing in local drive 
 MAF900_data <- dbConnect(
   SQLite(),
   "data/MAF900_data.sqlite",
@@ -293,7 +294,7 @@ formatted_table <- tibble(
 )
 
 
-# Display the table using knitr::kable()
+# Display the table 1 using knitr::kable()
 kable(formatted_table, align = 'c', caption = "Table 1: Portfolio Formation, Estimation, and Testing Periods")
 
 library(gt)
