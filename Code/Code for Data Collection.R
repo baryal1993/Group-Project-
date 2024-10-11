@@ -438,3 +438,103 @@ print(mean_residual_sd_1934_38)
 merged_portfolio_1934_38 <- portfolio_estimation_1934_38 %>%
   left_join(mean_residual_sd_1934_38, by = "Portfolio")
 print(merged_portfolio_1934_38)
+
+formatted_table_1934_38 <- data.frame(
+  Statistic = c(
+    "Beta (β_{p,t-1})",  # Beta for portfolio
+    "s(Beta)",  # Standard error of beta
+    "R² (r(Rp, Rm)²)",  # R-squared
+    "s(Rp)",  # Standard deviation of portfolio returns
+    "s(εp)",  # Standard deviation of residuals
+    "Mean s(εi)",  # Average residual standard deviation
+    "s(εp) / Mean s(εi)"  # Residual SD ratio
+  ),
+  `1` = round(c(formatted_table$avg_beta[1], formatted_table$avg_beta_se[1], formatted_table$avg_r_squared[1],
+                formatted_table$avg_return_sd[1], formatted_table$avg_residual_sd[1], 
+                formatted_table$mean_residual_sd[1], formatted_table$residual_ratio[1]), 4),
+  `2` = round(c(formatted_table$avg_beta[2], formatted_table$avg_beta_se[2], formatted_table$avg_r_squared[2],
+                formatted_table$avg_return_sd[2], formatted_table$avg_residual_sd[2], 
+                formatted_table$mean_residual_sd[2], formatted_table$residual_ratio[2]), 4),
+  `3` = round(c(formatted_table$avg_beta[3], formatted_table$avg_beta_se[3], formatted_table$avg_r_squared[3],
+                formatted_table$avg_return_sd[3], formatted_table$avg_residual_sd[3], 
+                formatted_table$mean_residual_sd[3], formatted_table$residual_ratio[3]), 4),
+  `4` = round(c(formatted_table$avg_beta[4], formatted_table$avg_beta_se[4], formatted_table$avg_r_squared[4],
+                formatted_table$avg_return_sd[4], formatted_table$avg_residual_sd[4], 
+                formatted_table$mean_residual_sd[4], formatted_table$residual_ratio[4]), 4),
+  `5` = round(c(formatted_table$avg_beta[5], formatted_table$avg_beta_se[5], formatted_table$avg_r_squared[5],
+                formatted_table$avg_return_sd[5], formatted_table$avg_residual_sd[5], 
+                formatted_table$mean_residual_sd[5], formatted_table$residual_ratio[5]), 4),
+  `6` = round(c(formatted_table$avg_beta[6], formatted_table$avg_beta_se[6], formatted_table$avg_r_squared[6],
+                formatted_table$avg_return_sd[6], formatted_table$avg_residual_sd[6], 
+                formatted_table$mean_residual_sd[6], formatted_table$residual_ratio[6]), 4),
+  `7` = round(c(formatted_table$avg_beta[7], formatted_table$avg_beta_se[7], formatted_table$avg_r_squared[7],
+                formatted_table$avg_return_sd[7], formatted_table$avg_residual_sd[7], 
+                formatted_table$mean_residual_sd[7], formatted_table$residual_ratio[7]), 4),
+  `8` = round(c(formatted_table$avg_beta[8], formatted_table$avg_beta_se[8], formatted_table$avg_r_squared[8],
+                formatted_table$avg_return_sd[8], formatted_table$avg_residual_sd[8], 
+                formatted_table$mean_residual_sd[8], formatted_table$residual_ratio[8]), 4),
+  `9` = round(c(formatted_table$avg_beta[9], formatted_table$avg_beta_se[9], formatted_table$avg_r_squared[9],
+                formatted_table$avg_return_sd[9], formatted_table$avg_residual_sd[9], 
+                formatted_table$mean_residual_sd[9], formatted_table$residual_ratio[9]), 4),
+  `10` = round(c(formatted_table$avg_beta[10], formatted_table$avg_beta_se[10], formatted_table$avg_r_squared[10],
+                 formatted_table$avg_return_sd[10], formatted_table$avg_residual_sd[10], 
+                 formatted_table$mean_residual_sd[10], formatted_table$residual_ratio[10]), 4)
+)
+
+kable(formatted_table_1934_38, format = "html", col.names = c("Statistic", paste0(1:10))) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  add_header_above(c(" " = 1, "Portfolios for Estimation Period 1934-38" = 10), bold = TRUE) %>%  # Add title centered
+  row_spec(1, bold = FALSE, italic = FALSE)  # Remove bold from the Beta row
+
+
+# Create the formatted table for portfolios 11 to 20 with statistics and periods numbers
+
+formatted_table_1934_38_11_to_20 <- data.frame(
+  Statistic = c(
+    "Beta (β_{p,t-1})",  # Beta for portfolio
+    "s(Beta)",           # Standard error of beta
+    "R² (r(Rp, Rm)²)",   # R-squared
+    "s(Rp)",             # Standard deviation of portfolio returns
+    "s(εp)",             # Standard deviation of residuals
+    "Mean s(εi)",        # Average residual standard deviation
+    "s(εp) / Mean s(εi)" # Residual SD ratio
+  ),
+  `11` = round(c(formatted_table$avg_beta[11], formatted_table$avg_beta_se[11], formatted_table$avg_r_squared[11],
+                 formatted_table$avg_return_sd[11], formatted_table$avg_residual_sd[11], 
+                 formatted_table$mean_residual_sd[11], formatted_table$residual_ratio[11]), 4),
+  `12` = round(c(formatted_table$avg_beta[12], formatted_table$avg_beta_se[12], formatted_table$avg_r_squared[12],
+                 formatted_table$avg_return_sd[12], formatted_table$avg_residual_sd[12], 
+                 formatted_table$mean_residual_sd[12], formatted_table$residual_ratio[12]), 4),
+  `13` = round(c(formatted_table$avg_beta[13], formatted_table$avg_beta_se[13], formatted_table$avg_r_squared[13],
+                 formatted_table$avg_return_sd[13], formatted_table$avg_residual_sd[13], 
+                 formatted_table$mean_residual_sd[13], formatted_table$residual_ratio[13]), 4),
+  `14` = round(c(formatted_table$avg_beta[14], formatted_table$avg_beta_se[14], formatted_table$avg_r_squared[14],
+                 formatted_table$avg_return_sd[14], formatted_table$avg_residual_sd[14], 
+                 formatted_table$mean_residual_sd[14], formatted_table$residual_ratio[14]), 4),
+  `15` = round(c(formatted_table$avg_beta[15], formatted_table$avg_beta_se[15], formatted_table$avg_r_squared[15],
+                 formatted_table$avg_return_sd[15], formatted_table$avg_residual_sd[15], 
+                 formatted_table$mean_residual_sd[15], formatted_table$residual_ratio[15]), 4),
+  `16` = round(c(formatted_table$avg_beta[16], formatted_table$avg_beta_se[16], formatted_table$avg_r_squared[16],
+                 formatted_table$avg_return_sd[16], formatted_table$avg_residual_sd[16], 
+                 formatted_table$mean_residual_sd[16], formatted_table$residual_ratio[16]), 4),
+  `17` = round(c(formatted_table$avg_beta[17], formatted_table$avg_beta_se[17], formatted_table$avg_r_squared[17],
+                 formatted_table$avg_return_sd[17], formatted_table$avg_residual_sd[17], 
+                 formatted_table$mean_residual_sd[17], formatted_table$residual_ratio[17]), 4),
+  `18` = round(c(formatted_table$avg_beta[18], formatted_table$avg_beta_se[18], formatted_table$avg_r_squared[18],
+                 formatted_table$avg_return_sd[18], formatted_table$avg_residual_sd[18], 
+                 formatted_table$mean_residual_sd[18], formatted_table$residual_ratio[18]), 4),
+  `19` = round(c(formatted_table$avg_beta[19], formatted_table$avg_beta_se[19], formatted_table$avg_r_squared[19],
+                 formatted_table$avg_return_sd[19], formatted_table$avg_residual_sd[19], 
+                 formatted_table$mean_residual_sd[19], formatted_table$residual_ratio[19]), 4),
+  `20` = round(c(formatted_table$avg_beta[20], formatted_table$avg_beta_se[20], formatted_table$avg_r_squared[20],
+                 formatted_table$avg_return_sd[20], formatted_table$avg_residual_sd[20], 
+                 formatted_table$mean_residual_sd[20], formatted_table$residual_ratio[20]), 4)
+)
+
+# Print the formatted table for portfolios 11 to 20 with a title and without bold formatting for the Beta row
+kable(formatted_table_1934_38_11_to_20, format = "html", col.names = c("Statistic", paste0(11:20))) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  add_header_above(c(" " = 1, "Portfolios for Estimation Period 1934-38" = 10), bold = TRUE) %>%  # Add title centered
+  row_spec(1, bold = FALSE, italic = FALSE)  
+
+
