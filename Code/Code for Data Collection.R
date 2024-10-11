@@ -13,6 +13,7 @@ library(knitr)
 library(dplyr)
 library(lubridate)
 library(gt)
+library(kableExtra)
 
 # initiate conenction with WRDS
 wrds <- dbConnect(Postgres(),
