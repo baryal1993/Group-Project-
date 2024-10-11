@@ -324,3 +324,71 @@ estimation_periods <- list(
   c("1950-01-01", "1954-12-31"),
   c("1958-01-01", "1962-12-31")
 )
+
+# Ensure there are no missing values in returns or market returns
+fm_data_1934_38_clean <- fm_data_1934_38 %>%
+  filter(!is.na(ret) & !is.na(fsi_rm))
+
+# Function to calculate all required statistics for each portfolio
+calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
+  
+  # Step 1: Calculate individual security statistics
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      # Run the regression for each security
+      model <- lm(ret ~ fsi_rm, data = .)
+      
+      # Extract the beta coefficient and standard error
+      beta <- coef(model)[2]
+      beta_se <- sqrt(vcov(model)[2, 2])  # Standard error of beta
+      
+      # Extract R-squared of the regression
+      r_squared <- summary(model)$r.squared
+      
+      # Calculate fitted values and residuals manually
+      fitted_vals <- fitted(model)
+      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
+      
+      # Calculate standard deviation of residuals
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      
+      # Calculate standard deviation of returns
+      return_sd <- sd(.$ret, na.rm = TRUE)
+      
+      # Return all statistics for each security
+      data.frame(beta = beta, beta_se = beta_se, r_squared = r_squared,
+                 return_sd = return_sd, residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  # Step 2: Assign portfolios based on beta
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(beta) %>%
+    mutate(Portfolio = ntile(beta, num_portfolios))  # Assign securities to 20 portfolios
+  
+  # Step 3: Calculate portfolio-level statistics
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(
+      avg_beta = mean(beta, na.rm = TRUE),
+      avg_beta_se = mean(beta_se, na.rm = TRUE),
+      avg_r_squared = mean(r_squared, na.rm = TRUE),
+      avg_return_sd = mean(return_sd, na.rm = TRUE),
+      avg_residual_sd = mean(residual_sd, na.rm = TRUE)
+    )
+  
+  # Step 4: Calculate the average residual SD across all portfolios
+  overall_avg_residual_sd <- mean(portfolio_stats$avg_residual_sd, na.rm = TRUE)
+  
+  # Step 5: Calculate the residual ratio for each portfolio
+  portfolio_stats <- portfolio_stats %>%
+    mutate(residual_ratio = avg_residual_sd / overall_avg_residual_sd)
+  
+  return(portfolio_stats)
+}
+
+portfolio_estimation_1934_38 <- calculate_portfolio_statistics(fm_data_1934_38_clean)
+
+# Check the results
+print(portfolio_estimation_1934_38)
