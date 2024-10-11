@@ -391,5 +391,50 @@ calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
 
 portfolio_estimation_1934_38 <- calculate_portfolio_statistics(fm_data_1934_38_clean)
 
-# Check the results
 print(portfolio_estimation_1934_38)
+
+fm_data_1934_38_clean <- fm_data_1934_38 %>%
+  filter(!is.na(ret) & !is.na(fsi_rm))
+
+# Function to calculate portfolio statistics with Mean s(εi)
+calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
+  
+  # Step 1: Calculate individual security statistics
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      # Run the regression for each security
+      model <- lm(ret ~ fsi_rm, data = .)
+      
+      fitted_vals <- fitted(model)
+      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
+      
+      # Calculate standard deviation of residuals for each security
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      
+      # Return residual SD for each security
+      data.frame(residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  # Step 2: Assign portfolios based on beta (already done in your main code)
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(residual_sd) %>%
+    mutate(Portfolio = ntile(residual_sd, num_portfolios))  # Assign securities to portfolios
+  
+  # Step 3: Calculate Mean s(εi) for each portfolio
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(mean_residual_sd = mean(residual_sd, na.rm = TRUE))  # Mean s(εi) for each portfolio
+  
+  return(portfolio_stats)
+}
+
+# Apply the function to calculate Mean s(εi) for the 1934-1938 period
+mean_residual_sd_1934_38 <- calculate_mean_residual_sd(fm_data_1934_38_clean)
+
+print(mean_residual_sd_1934_38)
+
+merged_portfolio_1934_38 <- portfolio_estimation_1934_38 %>%
+  left_join(mean_residual_sd_1934_38, by = "Portfolio")
+print(merged_portfolio_1934_38)
