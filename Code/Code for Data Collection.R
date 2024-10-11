@@ -249,46 +249,58 @@ formatted_table <- tibble(
     "1939-45", "1946-50", "1951-54", summary_table_1$total_securities[5], summary_table_1$securities_with_data[5]
   ),
   "6" = c(
-    "1945-50", "1951-55", "1956-59", summary_table_1$total_securities[6], summary_table_1$securities_with_data[6]
+    "1943-49", "1950-54", "1955-58", summary_table_1$total_securities[6], summary_table_1$securities_with_data[6]
   ),
   "7" = c(
-    "1950-55", "1956-60", "1961-64", summary_table_1$total_securities[7], summary_table_1$securities_with_data[7]
+    "1947-53", "1954-58", "1959-62", summary_table_1$total_securities[7], summary_table_1$securities_with_data[7]
   ),
   "8" = c(
-    "1955-60", "1961-65", "1966-69", summary_table_1$total_securities[8], summary_table_1$securities_with_data[8]
+    "1951-57", "1958-62", "1963-66", summary_table_1$total_securities[8], summary_table_1$securities_with_data[8]
   ),
   "9" = c(
-    "1960-65", "1966-70", "1971-74", summary_table_1$total_securities[9], summary_table_1$securities_with_data[9]
+    "1955-61", "1962-66", "1967-70", summary_table_1$total_securities[9], summary_table_1$securities_with_data[9]
   ),
   "10" = c(
-    "1965-70", "1971-75", "1976-79", summary_table_1$total_securities[10], summary_table_1$securities_with_data[10]
+    "1959-65", "1966-70", "1971-74", summary_table_1$total_securities[10], summary_table_1$securities_with_data[10]
   ),
   "11" = c(
-    "1970-75", "1976-80", "1981-84", summary_table_1$total_securities[11], summary_table_1$securities_with_data[11]
+    "1963-69", "1970-74", "1975-78", summary_table_1$total_securities[11], summary_table_1$securities_with_data[11]
   ),
   "12" = c(
-    "1975-80", "1981-85", "1986-89", summary_table_1$total_securities[12], summary_table_1$securities_with_data[12]
+    "1967-73", "1974-78", "1979-82", summary_table_1$total_securities[12], summary_table_1$securities_with_data[12]
   ),
   "13" = c(
-    "1980-85", "1986-90", "1991-94", summary_table_1$total_securities[13], summary_table_1$securities_with_data[13]
+    "1971-77", "1978-82", "1983-86", summary_table_1$total_securities[13], summary_table_1$securities_with_data[13]
   ),
   "14" = c(
-    "1985-90", "1991-95", "1996-99", summary_table_1$total_securities[14], summary_table_1$securities_with_data[14]
+    "1975-81", "1982-86", "1987-90", summary_table_1$total_securities[14], summary_table_1$securities_with_data[14]
   ),
   "15" = c(
-    "1990-95", "1996-00", "2001-04", summary_table_1$total_securities[15], summary_table_1$securities_with_data[15]
+    "1979-85", "1986-90", "1991-94", summary_table_1$total_securities[15], summary_table_1$securities_with_data[15]
   ),
   "16" = c(
-    "1995-00", "2001-05", "2006-09", summary_table_1$total_securities[16], summary_table_1$securities_with_data[16]
+    "1983-89", "1990-94", "1995-98", summary_table_1$total_securities[16], summary_table_1$securities_with_data[16]
   ),
   "17" = c(
-    "2000-05", "2006-10", "2011-14", summary_table_1$total_securities[17], summary_table_1$securities_with_data[17]
+    "1987-93", "1994-98", "1999-02", summary_table_1$total_securities[17], summary_table_1$securities_with_data[17]
   ),
   "18" = c(
-    "2005-10", "2011-15", "2016-19", summary_table_1$total_securities[18], summary_table_1$securities_with_data[18]
+    "1991-97", "1998-02", "2003-06", summary_table_1$total_securities[18], summary_table_1$securities_with_data[18]
   ),
   "19" = c(
-    "2010-15", "2016-20", "2021-23", summary_table_1$total_securities[19], summary_table_1$securities_with_data[19]
+    "1995-01", "2002-06", "2007-10", summary_table_1$total_securities[19], summary_table_1$securities_with_data[19]
+  ),
+  "20" = c(
+    "1999-05", "2006-10", "2011-14", summary_table_1$total_securities[20], summary_table_1$securities_with_data[20]
+  ),
+  "21" = c(
+    "2003-09", "2010-14", "2015-18", summary_table_1$total_securities[21], summary_table_1$securities_with_data[21]
+  ),
+  "22" = c(
+    "2007-13", "2014-18", "2019-22", summary_table_1$total_securities[22], summary_table_1$securities_with_data[22]
+  ),
+  "23" = c(
+    "2011-17", "2018-22", "2023", summary_table_1$total_securities[23], summary_table_1$securities_with_data[23]
   )
 )
 
