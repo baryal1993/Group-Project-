@@ -13,6 +13,7 @@ library(knitr)
 library(dplyr)
 library(lubridate)
 library(gt)
+library(kableExtra)
 
 # initiate conenction with WRDS
 wrds <- dbConnect(Postgres(),
@@ -250,46 +251,58 @@ formatted_table <- tibble(
     "1939-45", "1946-50", "1951-54", summary_table_1$total_securities[5], summary_table_1$securities_with_data[5]
   ),
   "6" = c(
-    "1945-50", "1951-55", "1956-59", summary_table_1$total_securities[6], summary_table_1$securities_with_data[6]
+    "1943-49", "1950-54", "1955-58", summary_table_1$total_securities[6], summary_table_1$securities_with_data[6]
   ),
   "7" = c(
-    "1950-55", "1956-60", "1961-64", summary_table_1$total_securities[7], summary_table_1$securities_with_data[7]
+    "1947-53", "1954-58", "1959-62", summary_table_1$total_securities[7], summary_table_1$securities_with_data[7]
   ),
   "8" = c(
-    "1955-60", "1961-65", "1966-69", summary_table_1$total_securities[8], summary_table_1$securities_with_data[8]
+    "1951-57", "1958-62", "1963-66", summary_table_1$total_securities[8], summary_table_1$securities_with_data[8]
   ),
   "9" = c(
-    "1960-65", "1966-70", "1971-74", summary_table_1$total_securities[9], summary_table_1$securities_with_data[9]
+    "1955-61", "1962-66", "1967-70", summary_table_1$total_securities[9], summary_table_1$securities_with_data[9]
   ),
   "10" = c(
-    "1965-70", "1971-75", "1976-79", summary_table_1$total_securities[10], summary_table_1$securities_with_data[10]
+    "1959-65", "1966-70", "1971-74", summary_table_1$total_securities[10], summary_table_1$securities_with_data[10]
   ),
   "11" = c(
-    "1970-75", "1976-80", "1981-84", summary_table_1$total_securities[11], summary_table_1$securities_with_data[11]
+    "1963-69", "1970-74", "1975-78", summary_table_1$total_securities[11], summary_table_1$securities_with_data[11]
   ),
   "12" = c(
-    "1975-80", "1981-85", "1986-89", summary_table_1$total_securities[12], summary_table_1$securities_with_data[12]
+    "1967-73", "1974-78", "1979-82", summary_table_1$total_securities[12], summary_table_1$securities_with_data[12]
   ),
   "13" = c(
-    "1980-85", "1986-90", "1991-94", summary_table_1$total_securities[13], summary_table_1$securities_with_data[13]
+    "1971-77", "1978-82", "1983-86", summary_table_1$total_securities[13], summary_table_1$securities_with_data[13]
   ),
   "14" = c(
-    "1985-90", "1991-95", "1996-99", summary_table_1$total_securities[14], summary_table_1$securities_with_data[14]
+    "1975-81", "1982-86", "1987-90", summary_table_1$total_securities[14], summary_table_1$securities_with_data[14]
   ),
   "15" = c(
-    "1990-95", "1996-00", "2001-04", summary_table_1$total_securities[15], summary_table_1$securities_with_data[15]
+    "1979-85", "1986-90", "1991-94", summary_table_1$total_securities[15], summary_table_1$securities_with_data[15]
   ),
   "16" = c(
-    "1995-00", "2001-05", "2006-09", summary_table_1$total_securities[16], summary_table_1$securities_with_data[16]
+    "1983-89", "1990-94", "1995-98", summary_table_1$total_securities[16], summary_table_1$securities_with_data[16]
   ),
   "17" = c(
-    "2000-05", "2006-10", "2011-14", summary_table_1$total_securities[17], summary_table_1$securities_with_data[17]
+    "1987-93", "1994-98", "1999-02", summary_table_1$total_securities[17], summary_table_1$securities_with_data[17]
   ),
   "18" = c(
-    "2005-10", "2011-15", "2016-19", summary_table_1$total_securities[18], summary_table_1$securities_with_data[18]
+    "1991-97", "1998-02", "2003-06", summary_table_1$total_securities[18], summary_table_1$securities_with_data[18]
   ),
   "19" = c(
-    "2010-15", "2016-20", "2021-23", summary_table_1$total_securities[19], summary_table_1$securities_with_data[19]
+    "1995-01", "2002-06", "2007-10", summary_table_1$total_securities[19], summary_table_1$securities_with_data[19]
+  ),
+  "20" = c(
+    "1999-05", "2006-10", "2011-14", summary_table_1$total_securities[20], summary_table_1$securities_with_data[20]
+  ),
+  "21" = c(
+    "2003-09", "2010-14", "2015-18", summary_table_1$total_securities[21], summary_table_1$securities_with_data[21]
+  ),
+  "22" = c(
+    "2007-13", "2014-18", "2019-22", summary_table_1$total_securities[22], summary_table_1$securities_with_data[22]
+  ),
+  "23" = c(
+    "2011-17", "2018-22", "2023", summary_table_1$total_securities[23], summary_table_1$securities_with_data[23]
   )
 )
 
@@ -304,3 +317,224 @@ formatted_table %>%
     title = "Table 1: Portfolio Formation, Estimation, and Testing Periods",
     subtitle = "Period"
   )
+
+# Define estimation periods for the selected years
+estimation_periods <- list(
+  c("1934-01-01", "1938-12-31"),
+  c("1942-01-01", "1946-12-31"),
+  c("1950-01-01", "1954-12-31"),
+  c("1958-01-01", "1962-12-31")
+)
+
+# To ensure there are no missing values in returns or market returns
+fm_data_1934_38_clean <- fm_data_1934_38 %>%
+  filter(!is.na(ret) & !is.na(fsi_rm))
+
+# Function to calculate all required statistics for each portfolio
+calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
+  
+  # Step 1: Calculate individual security statistics
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      # Run the regression for each security
+      model <- lm(ret ~ fsi_rm, data = .)
+      
+      # Extract the beta coefficient and standard error
+      beta <- coef(model)[2]
+      beta_se <- sqrt(vcov(model)[2, 2])  # Standard error of beta
+      
+      # Extract R-squared of the regression
+      r_squared <- summary(model)$r.squared
+      
+      # Calculate fitted values and residuals manually
+      fitted_vals <- fitted(model)
+      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
+      
+      # Calculate standard deviation of residuals
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      
+      # Calculate standard deviation of returns
+      return_sd <- sd(.$ret, na.rm = TRUE)
+      
+      # Return all statistics for each security
+      data.frame(beta = beta, beta_se = beta_se, r_squared = r_squared,
+                 return_sd = return_sd, residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  # Step 2: Assign portfolios based on beta
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(beta) %>%
+    mutate(Portfolio = ntile(beta, num_portfolios))  # Assign securities to 20 portfolios
+  
+  # Step 3: Calculate portfolio-level statistics
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(
+      avg_beta = mean(beta, na.rm = TRUE),
+      avg_beta_se = mean(beta_se, na.rm = TRUE),
+      avg_r_squared = mean(r_squared, na.rm = TRUE),
+      avg_return_sd = mean(return_sd, na.rm = TRUE),
+      avg_residual_sd = mean(residual_sd, na.rm = TRUE)
+    )
+  
+  # Step 4: Calculate the average residual SD across all portfolios
+  overall_avg_residual_sd <- mean(portfolio_stats$avg_residual_sd, na.rm = TRUE)
+  
+  # Step 5: Calculate the residual ratio for each portfolio
+  portfolio_stats <- portfolio_stats %>%
+    mutate(residual_ratio = avg_residual_sd / overall_avg_residual_sd)
+  
+  return(portfolio_stats)
+}
+
+portfolio_estimation_1934_38 <- calculate_portfolio_statistics(fm_data_1934_38_clean)
+
+print(portfolio_estimation_1934_38)
+
+fm_data_1934_38_clean <- fm_data_1934_38 %>%
+  filter(!is.na(ret) & !is.na(fsi_rm))
+
+# Function to calculate portfolio statistics with Mean s(εi)
+calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
+  
+  # Step 1: Calculate individual security statistics
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      # Run the regression for each security
+      model <- lm(ret ~ fsi_rm, data = .)
+      
+      fitted_vals <- fitted(model)
+      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
+      
+      # Calculate standard deviation of residuals for each security
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      
+      # Return residual SD for each security
+      data.frame(residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  # Step 2: Assign portfolios based on beta (already done in your main code)
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(residual_sd) %>%
+    mutate(Portfolio = ntile(residual_sd, num_portfolios))  # Assign securities to portfolios
+  
+  # Step 3: Calculate Mean s(εi) for each portfolio
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(mean_residual_sd = mean(residual_sd, na.rm = TRUE))  # Mean s(εi) for each portfolio
+  
+  return(portfolio_stats)
+}
+
+# Apply the function to calculate Mean s(εi) for the 1934-1938 period
+mean_residual_sd_1934_38 <- calculate_mean_residual_sd(fm_data_1934_38_clean)
+
+print(mean_residual_sd_1934_38)
+
+merged_portfolio_1934_38 <- portfolio_estimation_1934_38 %>%
+  left_join(mean_residual_sd_1934_38, by = "Portfolio")
+print(merged_portfolio_1934_38)
+
+formatted_table_1934_38 <- data.frame(
+  Statistic = c(
+    "Beta (β_{p,t-1})",  # Beta for portfolio
+    "s(Beta)",  # Standard error of beta
+    "R² (r(Rp, Rm)²)",  # R-squared
+    "s(Rp)",  # Standard deviation of portfolio returns
+    "s(εp)",  # Standard deviation of residuals
+    "Mean s(εi)",  # Average residual standard deviation
+    "s(εp) / Mean s(εi)"  # Residual SD ratio
+  ),
+  `1` = round(c(formatted_table$avg_beta[1], formatted_table$avg_beta_se[1], formatted_table$avg_r_squared[1],
+                formatted_table$avg_return_sd[1], formatted_table$avg_residual_sd[1], 
+                formatted_table$mean_residual_sd[1], formatted_table$residual_ratio[1]), 4),
+  `2` = round(c(formatted_table$avg_beta[2], formatted_table$avg_beta_se[2], formatted_table$avg_r_squared[2],
+                formatted_table$avg_return_sd[2], formatted_table$avg_residual_sd[2], 
+                formatted_table$mean_residual_sd[2], formatted_table$residual_ratio[2]), 4),
+  `3` = round(c(formatted_table$avg_beta[3], formatted_table$avg_beta_se[3], formatted_table$avg_r_squared[3],
+                formatted_table$avg_return_sd[3], formatted_table$avg_residual_sd[3], 
+                formatted_table$mean_residual_sd[3], formatted_table$residual_ratio[3]), 4),
+  `4` = round(c(formatted_table$avg_beta[4], formatted_table$avg_beta_se[4], formatted_table$avg_r_squared[4],
+                formatted_table$avg_return_sd[4], formatted_table$avg_residual_sd[4], 
+                formatted_table$mean_residual_sd[4], formatted_table$residual_ratio[4]), 4),
+  `5` = round(c(formatted_table$avg_beta[5], formatted_table$avg_beta_se[5], formatted_table$avg_r_squared[5],
+                formatted_table$avg_return_sd[5], formatted_table$avg_residual_sd[5], 
+                formatted_table$mean_residual_sd[5], formatted_table$residual_ratio[5]), 4),
+  `6` = round(c(formatted_table$avg_beta[6], formatted_table$avg_beta_se[6], formatted_table$avg_r_squared[6],
+                formatted_table$avg_return_sd[6], formatted_table$avg_residual_sd[6], 
+                formatted_table$mean_residual_sd[6], formatted_table$residual_ratio[6]), 4),
+  `7` = round(c(formatted_table$avg_beta[7], formatted_table$avg_beta_se[7], formatted_table$avg_r_squared[7],
+                formatted_table$avg_return_sd[7], formatted_table$avg_residual_sd[7], 
+                formatted_table$mean_residual_sd[7], formatted_table$residual_ratio[7]), 4),
+  `8` = round(c(formatted_table$avg_beta[8], formatted_table$avg_beta_se[8], formatted_table$avg_r_squared[8],
+                formatted_table$avg_return_sd[8], formatted_table$avg_residual_sd[8], 
+                formatted_table$mean_residual_sd[8], formatted_table$residual_ratio[8]), 4),
+  `9` = round(c(formatted_table$avg_beta[9], formatted_table$avg_beta_se[9], formatted_table$avg_r_squared[9],
+                formatted_table$avg_return_sd[9], formatted_table$avg_residual_sd[9], 
+                formatted_table$mean_residual_sd[9], formatted_table$residual_ratio[9]), 4),
+  `10` = round(c(formatted_table$avg_beta[10], formatted_table$avg_beta_se[10], formatted_table$avg_r_squared[10],
+                 formatted_table$avg_return_sd[10], formatted_table$avg_residual_sd[10], 
+                 formatted_table$mean_residual_sd[10], formatted_table$residual_ratio[10]), 4)
+)
+
+kable(formatted_table_1934_38, format = "html", col.names = c("Statistic", paste0(1:10))) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  add_header_above(c(" " = 1, "Portfolios for Estimation Period 1934-38" = 10), bold = TRUE) %>%  # Add title centered
+  row_spec(1, bold = FALSE, italic = FALSE)  # Remove bold from the Beta row
+
+
+# Create the formatted table for portfolios 11 to 20 with statistics and periods numbers
+
+formatted_table_1934_38_11_to_20 <- data.frame(
+  Statistic = c(
+    "Beta (β_{p,t-1})",  # Beta for portfolio
+    "s(Beta)",           # Standard error of beta
+    "R² (r(Rp, Rm)²)",   # R-squared
+    "s(Rp)",             # Standard deviation of portfolio returns
+    "s(εp)",             # Standard deviation of residuals
+    "Mean s(εi)",        # Average residual standard deviation
+    "s(εp) / Mean s(εi)" # Residual SD ratio
+  ),
+  `11` = round(c(formatted_table$avg_beta[11], formatted_table$avg_beta_se[11], formatted_table$avg_r_squared[11],
+                 formatted_table$avg_return_sd[11], formatted_table$avg_residual_sd[11], 
+                 formatted_table$mean_residual_sd[11], formatted_table$residual_ratio[11]), 4),
+  `12` = round(c(formatted_table$avg_beta[12], formatted_table$avg_beta_se[12], formatted_table$avg_r_squared[12],
+                 formatted_table$avg_return_sd[12], formatted_table$avg_residual_sd[12], 
+                 formatted_table$mean_residual_sd[12], formatted_table$residual_ratio[12]), 4),
+  `13` = round(c(formatted_table$avg_beta[13], formatted_table$avg_beta_se[13], formatted_table$avg_r_squared[13],
+                 formatted_table$avg_return_sd[13], formatted_table$avg_residual_sd[13], 
+                 formatted_table$mean_residual_sd[13], formatted_table$residual_ratio[13]), 4),
+  `14` = round(c(formatted_table$avg_beta[14], formatted_table$avg_beta_se[14], formatted_table$avg_r_squared[14],
+                 formatted_table$avg_return_sd[14], formatted_table$avg_residual_sd[14], 
+                 formatted_table$mean_residual_sd[14], formatted_table$residual_ratio[14]), 4),
+  `15` = round(c(formatted_table$avg_beta[15], formatted_table$avg_beta_se[15], formatted_table$avg_r_squared[15],
+                 formatted_table$avg_return_sd[15], formatted_table$avg_residual_sd[15], 
+                 formatted_table$mean_residual_sd[15], formatted_table$residual_ratio[15]), 4),
+  `16` = round(c(formatted_table$avg_beta[16], formatted_table$avg_beta_se[16], formatted_table$avg_r_squared[16],
+                 formatted_table$avg_return_sd[16], formatted_table$avg_residual_sd[16], 
+                 formatted_table$mean_residual_sd[16], formatted_table$residual_ratio[16]), 4),
+  `17` = round(c(formatted_table$avg_beta[17], formatted_table$avg_beta_se[17], formatted_table$avg_r_squared[17],
+                 formatted_table$avg_return_sd[17], formatted_table$avg_residual_sd[17], 
+                 formatted_table$mean_residual_sd[17], formatted_table$residual_ratio[17]), 4),
+  `18` = round(c(formatted_table$avg_beta[18], formatted_table$avg_beta_se[18], formatted_table$avg_r_squared[18],
+                 formatted_table$avg_return_sd[18], formatted_table$avg_residual_sd[18], 
+                 formatted_table$mean_residual_sd[18], formatted_table$residual_ratio[18]), 4),
+  `19` = round(c(formatted_table$avg_beta[19], formatted_table$avg_beta_se[19], formatted_table$avg_r_squared[19],
+                 formatted_table$avg_return_sd[19], formatted_table$avg_residual_sd[19], 
+                 formatted_table$mean_residual_sd[19], formatted_table$residual_ratio[19]), 4),
+  `20` = round(c(formatted_table$avg_beta[20], formatted_table$avg_beta_se[20], formatted_table$avg_r_squared[20],
+                 formatted_table$avg_return_sd[20], formatted_table$avg_residual_sd[20], 
+                 formatted_table$mean_residual_sd[20], formatted_table$residual_ratio[20]), 4)
+)
+
+# Print the formatted table for portfolios 11 to 20 with a title and without bold formatting for the Beta row
+kable(formatted_table_1934_38_11_to_20, format = "html", col.names = c("Statistic", paste0(11:20))) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  add_header_above(c(" " = 1, "Portfolios for Estimation Period 1934-38" = 10), bold = TRUE) %>%  # Add title centered
+  row_spec(1, bold = FALSE, italic = FALSE)  
+
+
