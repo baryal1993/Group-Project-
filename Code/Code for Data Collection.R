@@ -538,43 +538,4 @@ kable(formatted_table_1934_38_11_to_20, format = "html", col.names = c("Statisti
   row_spec(1, bold = FALSE, italic = FALSE)  
 
 #Portfolio for Estimation for Period 1942-46
-# Ensure there are no missing values in returns or market returns
-fm_data_1942_46_clean <- fm_data %>%
-  filter(!is.na(ret) & !is.na(fsi_rm))
 
-# Function to calculate beta, residuals, residual standard deviation, and residual ratio for each security
-calculate_betas_and_residuals <- function(data) {
-  data %>%
-    group_by(permno) %>%
-    do({
-      # Run the regression for each security
-      model <- lm(ret ~ fsi_rm, data = .)
-      
-      # Extract the beta coefficient
-      beta <- coef(model)[2]
-      
-      # Calculate fitted values and residuals manually
-      fitted_vals <- fitted(model)
-      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
-      
-      # Calculate residual standard deviation
-      residual_sd <- sd(residuals_vals, na.rm = TRUE)
-      
-      # Return beta and residual_sd
-      data.frame(beta = beta, residual_sd = residual_sd)
-    }) %>%
-    ungroup() %>%
-    mutate(
-      # Calculate the average residual standard deviation for the entire dataset
-      avg_residual_sd = mean(residual_sd, na.rm = TRUE),
-      
-      # Calculate the residual ratio: residual_sd / avg_residual_sd
-      residual_ratio = residual_sd / avg_residual_sd
-    )
-}
-
-# Apply the function to calculate betas, residual SD, and residual ratio for the 1934-1938 period
-betas_1942_46_year <- calculate_betas_and_residuals(fm_data_1942_46_clean)
-
-# Check the results
-print(betas_1942_46_year)
