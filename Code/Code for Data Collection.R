@@ -700,9 +700,8 @@ formatted_table_1942_46_1_to_10 <- data.frame(
 # Print the formatted table using knitr::kable without altering values
 kable(formatted_table_1942_46_1_to_10, format = "html", col.names = c("Statistic", paste0(1:10))) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
-  row_spec(1, bold = FALSE, italic = FALSE)  
-
-
+  add_header_above(c(" " = 1, "Portfolios for Estimation Period 1942-46" = 10)) %>%  # Add the title
+  row_spec(1, bold = FALSE, italic = FALSE)
 
 formatted_table_1942_46 <- data.frame(
   Statistic = c(
@@ -739,5 +738,7 @@ formatted_table_1942_46 <- data.frame(
 # Print the formatted table using knitr::kable without altering values
 kable(formatted_table_1942_46, format = "html", col.names = c("Statistic", paste0(11:20))) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
-  row_spec(1, bold = FALSE, italic = FALSE)  
+  add_header_above(c(" " = 1, "Portfolios for Estimation Period 1942-46" = 10)) %>%  # Add the title
+  row_spec(1, bold = FALSE, italic = FALSE)
+
 
