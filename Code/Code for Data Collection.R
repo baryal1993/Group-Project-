@@ -537,6 +537,7 @@ kable(formatted_table_1934_38_11_to_20, format = "html", col.names = c("Statisti
   add_header_above(c(" " = 1, "Portfolios for Estimation Period 1934-38" = 10), bold = TRUE) %>%  # Add title centered
   row_spec(1, bold = FALSE, italic = FALSE)  
 
+#Portfolio for Estimation for Period 1942-46
 # Ensure there are no missing values in returns or market returns
 fm_data_1942_46_clean <- fm_data %>%
   filter(!is.na(ret) & !is.na(fsi_rm))
