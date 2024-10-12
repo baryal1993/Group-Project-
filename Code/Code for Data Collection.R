@@ -741,4 +741,114 @@ kable(formatted_table_1942_46, format = "html", col.names = c("Statistic", paste
   add_header_above(c(" " = 1, "Portfolios for Estimation Period 1942-46" = 10)) %>%  # Add the title
   row_spec(1, bold = FALSE, italic = FALSE)
 
+start_date <- as.Date("1950-01-01")
+end_date <- as.Date("1954-12-31")
 
+# Filter the dataset for the 1950-1954 period
+fm_data_1950_54 <- fm_data %>%
+  filter(date >= start_date & date <= end_date)
+
+# Check the filtered data
+print(head(fm_data_1950_54))
+fm_data_1950_54_clean <- fm_data_1950_54 %>%
+  filter(!is.na(ret) & !is.na(fsi_rm))
+
+# Function to calculate portfolio statistics (same as before)
+calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
+  
+  # Step 1: Calculate individual security statistics
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      model <- lm(ret ~ fsi_rm, data = .)
+      beta <- coef(model)[2]
+      beta_se <- sqrt(vcov(model)[2, 2])  # Standard error of beta
+      r_squared <- summary(model)$r.squared
+      fitted_vals <- fitted(model)
+      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      return_sd <- sd(.$ret, na.rm = TRUE)
+      
+      data.frame(beta = beta, beta_se = beta_se, r_squared = r_squared,
+                 return_sd = return_sd, residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  # Step 2: Assign portfolios based on beta
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(beta) %>%
+    mutate(Portfolio = ntile(beta, num_portfolios))
+  
+  # Step 3: Calculate portfolio-level statistics
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(
+      avg_beta = mean(beta, na.rm = TRUE),
+      avg_beta_se = mean(beta_se, na.rm = TRUE),
+      avg_r_squared = mean(r_squared, na.rm = TRUE),
+      avg_return_sd = mean(return_sd, na.rm = TRUE),
+      avg_residual_sd = mean(residual_sd, na.rm = TRUE)
+    )
+  
+  # Step 4: Calculate the average residual SD across all portfolios
+  overall_avg_residual_sd <- mean(portfolio_stats$avg_residual_sd, na.rm = TRUE)
+  
+  # Step 5: Calculate the residual ratio for each portfolio
+  portfolio_stats <- portfolio_stats %>%
+    mutate(residual_ratio = avg_residual_sd / overall_avg_residual_sd)
+  
+  return(portfolio_stats)
+}
+
+# Apply the function to the data for 1950-54
+portfolio_estimation_1950_54 <- calculate_portfolio_statistics(fm_data_1950_54_clean)
+
+# View the results
+print(portfolio_estimation_1950_54)
+
+# Function to calculate portfolio statistics with Mean s(εi)
+calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
+  
+  # Step 1: Calculate individual security statistics
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      # Run the regression for each security
+      model <- lm(ret ~ fsi_rm, data = .)
+      
+      # Calculate residuals manually
+      fitted_vals <- fitted(model)
+      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
+      
+      # Calculate standard deviation of residuals for each security
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      
+      # Return residual SD for each security
+      data.frame(residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  # Step 2: Assign portfolios based on beta (already done in your main code)
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(residual_sd) %>%
+    mutate(Portfolio = ntile(residual_sd, num_portfolios))  # Assign securities to portfolios
+  
+  # Step 3: Calculate Mean s(εi) for each portfolio
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(mean_residual_sd = mean(residual_sd, na.rm = TRUE))  # Mean s(εi) for each portfolio
+  
+  return(portfolio_stats)
+}
+
+# Apply the function to calculate Mean s(εi) for the 1934-1938 period
+mean_residual_sd_1950_54 <- calculate_mean_residual_sd(fm_data_1950_54_clean)
+
+# Check the results
+print(mean_residual_sd_1950_54)
+
+merged_portfolio_1950_54 <- portfolio_estimation_1950_54 %>%
+  left_join(mean_residual_sd_1950_54, by = "Portfolio")
+
+# Check the results
+print(merged_portfolio_1950_54)
