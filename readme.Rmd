@@ -9,7 +9,7 @@ Through this replication, we aim to provide both a confirmation of the original 
 The responsibility division include as below: 
 Project Creation Bibek: completed 
 Data Collection Wajehaa: completed 
-Data Preparation Bibek: completed 
+Data Preparation Bibek and wajeeha: completed 
 Running regression Bibek and Wajeeha: ongoing 
 data analysis Wajeeha and Bibek: ongoing 
 report writing Wajeeha and Bibek: ongoing 
