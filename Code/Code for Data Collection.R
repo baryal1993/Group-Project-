@@ -934,3 +934,94 @@ kable(formatted_table_1950_54_11_to_20, format = "html", col.names = c("Statisti
 
 #Portfolio for Estimation Period 1958-62
 
+start_date <- as.Date("1958-01-01")
+end_date <- as.Date("1962-12-31")
+
+# Filter the dataset for the 1958-1962 period
+fm_data_1958_62 <- fm_data %>%
+  filter(date >= start_date & date <= end_date)
+
+fm_data_1958_62_clean <- fm_data_1958_62 %>%
+  filter(!is.na(ret) & !is.na(fsi_rm))
+
+# Step 3: Function to calculate portfolio statistics for each security
+calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      model <- lm(ret ~ fsi_rm, data = .)
+      beta <- coef(model)[2]
+      beta_se <- sqrt(vcov(model)[2, 2])
+      r_squared <- summary(model)$r.squared
+      residuals_vals <- .$ret - fitted(model)
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      return_sd <- sd(.$ret, na.rm = TRUE)
+      data.frame(beta = beta, beta_se = beta_se, r_squared = r_squared,
+                 return_sd = return_sd, residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(beta) %>%
+    mutate(Portfolio = ntile(beta, num_portfolios))
+  
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(
+      avg_beta = mean(beta, na.rm = TRUE),
+      avg_beta_se = mean(beta_se, na.rm = TRUE),
+      avg_r_squared = mean(r_squared, na.rm = TRUE),
+      avg_return_sd = mean(return_sd, na.rm = TRUE),
+      avg_residual_sd = mean(residual_sd, na.rm = TRUE)
+    )
+  
+  overall_avg_residual_sd <- mean(portfolio_stats$avg_residual_sd, na.rm = TRUE)
+  
+  portfolio_stats <- portfolio_stats %>%
+    mutate(residual_ratio = avg_residual_sd / overall_avg_residual_sd)
+  
+  return(portfolio_stats)
+}
+
+# Step 4: Apply the function to calculate statistics for 1958-62 period
+portfolio_estimation_1958_62 <- calculate_portfolio_statistics(fm_data_1958_62_clean)
+
+# Function to calculate portfolio statistics with Mean s(εi)
+calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
+  
+  # Step 1: Calculate individual security statistics
+  betas_and_residuals <- data %>%
+    group_by(permno) %>%
+    do({
+      # Run the regression for each security
+      model <- lm(ret ~ fsi_rm, data = .)
+      
+      # Calculate residuals manually
+      fitted_vals <- fitted(model)
+      residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
+      
+      # Calculate standard deviation of residuals for each security
+      residual_sd <- sd(residuals_vals, na.rm = TRUE)
+      
+      # Return residual SD for each security
+      data.frame(residual_sd = residual_sd)
+    }) %>%
+    ungroup()
+  
+  # Step 2: Assign portfolios based on beta (already done in your main code)
+  betas_and_residuals <- betas_and_residuals %>%
+    arrange(residual_sd) %>%
+    mutate(Portfolio = ntile(residual_sd, num_portfolios))  
+  
+  # Step 3: Calculate Mean s(εi) for each portfolio
+  portfolio_stats <- betas_and_residuals %>%
+    group_by(Portfolio) %>%
+    summarize(mean_residual_sd = mean(residual_sd, na.rm = TRUE))  
+  
+  return(portfolio_stats)
+}
+
+# Apply the function to calculate Mean s(εi) for the 1934-1938 period
+mean_residual_sd_1958_62 <- calculate_mean_residual_sd(fm_data_1958_62_clean)
+
+
