@@ -1107,5 +1107,79 @@ kable(formatted_table_1958_62_11_to_20, format = "html", col.names = c("Statisti
   add_header_above(c(" " = 1, "Portfolios for Estimation Period 1958-62" = 10)) %>%
   row_spec(1, bold = FALSE, italic = FALSE)
 
+# For Table 3
+start_date <- ymd("1935-01-01")
+end_date <- ymd("1968-06-30")
+
+# Filter data for the required period
+fm_data_period <- fm_data %>%
+  filter(date >= start_date & date <= end_date)
+
+
+estimate_bs <- function(data, min_obs = 60) {
+  # Filter out groups that don't have enough observations
+  if (nrow(data) < min_obs || sum(!is.na(data$ret)) < min_obs || sum(!is.na(data$mkt)) < min_obs) {
+    return(tibble(beta = NA, residual_sd = NA))  # Return NA if there are not enough observations
+  }
+  
+  # Perform the linear regression
+  model <- lm(ret ~ mkt, data = data)
+  
+  # Extract beta (coefficient of the market return)
+  beta <- coef(model)[2]
+  
+  # Calculate residual standard deviation (idiosyncratic risk)
+  residuals_vals <- residuals(model)
+  residual_sd <- sd(residuals_vals, na.rm = TRUE)
+  
+  return(tibble(beta = beta, residual_sd = residual_sd))
+}
+
+# Function to apply rolling estimation over time
+roll_bs_estimation <- function(data, yrs, min_obs) {
+  data <- data %>% 
+    arrange(date)
+  
+  betas <- slide_period(
+    .x = data,
+    .i = data$date,
+    .period = "year",
+    .f = ~ estimate_bs(., min_obs),
+    .before = yrs - 1,
+    .complete = FALSE
+  )
+  
+  dt1 <- data %>% mutate(yr = year(date)) %>% select(yr) %>% distinct()  
+  return(tibble(
+    date = dt1$yr,
+    betas) %>% unnest(betas))
+}
+
+p_beta <- fm_data_period %>%
+  mutate(mkt = fsi_rm) %>%
+  select(permno, date, ret, mkt) %>%
+  nest(data = c(date, ret, mkt)) %>%
+  mutate(beta = map(data, ~ roll_bs_estimation(., yrs = 5, min_obs = 60))) %>%
+  select(permno, beta) %>%
+  unnest(beta) %>%
+  filter(date >= "1935") %>%
+  drop_na()
+
+# View the beta estimation results
+print(head(p_beta))
+
+# Set period boundaries
+port_bdate <- ymd("1935-01-01")
+port_edate <- ymd("1968-06-30")
+
+# Prepare data for portfolio return and risk calculations
+for_port_ret <- fm_data_period %>%
+  select(permno, date, ret) %>%
+  filter(between(date, port_bdate, port_edate)) %>%
+  mutate(yr = year(date), p_yr = yr - 1) %>%
+  drop_na()
+
+# View data for portfolios
+print(head(for_port_ret))
 
 
