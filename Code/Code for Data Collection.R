@@ -768,7 +768,6 @@ calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
       residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
       residual_sd <- sd(residuals_vals, na.rm = TRUE)
       return_sd <- sd(.$ret, na.rm = TRUE)
-      
       data.frame(beta = beta, beta_se = beta_se, r_squared = r_squared,
                  return_sd = return_sd, residual_sd = residual_sd)
     }) %>%
@@ -1148,7 +1147,6 @@ roll_bs_estimation <- function(data, yrs, min_obs) {
     .before = yrs - 1,
     .complete = FALSE
   )
-  
   dt1 <- data %>% mutate(yr = year(date)) %>% select(yr) %>% distinct()  
   return(tibble(
     date = dt1$yr,
@@ -1172,14 +1170,12 @@ print(head(p_beta))
 port_bdate <- ymd("1935-01-01")
 port_edate <- ymd("1968-06-30")
 
-# Prepare data for portfolio return and risk calculations
+# Preparing data for portfolio return and risk calculations
 for_port_ret <- fm_data_period %>%
   select(permno, date, ret) %>%
   filter(between(date, port_bdate, port_edate)) %>%
   mutate(yr = year(date), p_yr = yr - 1) %>%
   drop_na()
-
 # View data for portfolios
 print(head(for_port_ret))
-
 
