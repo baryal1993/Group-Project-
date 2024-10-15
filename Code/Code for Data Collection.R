@@ -1305,3 +1305,151 @@ final_results <- do.call(rbind, all_period_results)
 
 # View the final results table
 print(final_results)
+
+
+
+
+############################# initial code for table 4 #################
+
+ CONSTRUCT TABLE 4
+#1. need to calculate port returns' mean and sd 
+#sAVE IT AS TIBBLE
+
+#TABLE 4 SUMMARIES
+#SUMMARY 1 - AVERAGE AND STANDARD DEVIATION OF LAMBDAS
+lambdas_with_rf$no_grouping <- "1935 to 1968"
+
+summary1<-lambdas_with_rf |>
+  group_by("1935 to 1968")|>
+  summarise(across(
+    .cols = c(lambda0, lambda1, lambda0rf, rsquare), 
+    .fns = list(Mean = mean, SD = sd),  
+    .names = "{col}_{fn}"))
+
+summary2<-lambdas_with_rf |>
+  group_by(out)|>
+  summarise(across(
+    .cols = c(lambda0, lambda1, lambda0rf, rsquare), 
+    .fns = list(Mean = mean, SD = sd),  
+    .names = "{col}_{fn}"))
+
+summary3<-lambdas_with_rf |>
+  group_by(elt)|>
+  summarise(across(
+    .cols = c(lambda0, lambda1, lambda0rf, rsquare), 
+    .fns = list(Mean = mean, SD = sd),  
+    .names = "{col}_{fn}"))
+
+
+colnames(summary3)[1] <- "Period"
+colnames(summary2)[1] <- "Period"
+colnames(summary1)[1] <- "Period"
+
+summary_total <- bind_rows(summary1,summary2,summary3)
+
+#1. need to calculate port returns' mean and sd 
+risk_free<-ff_3factors_mon|>
+  select(rf, year_month)
+
+stacked_data <- read.csv("stacked_data_cross_sectional_regression.csv")
+stacked_data <- as_tibble(stacked_data)
+
+stacked_data$no_grouping <- "1935 to 1968"
+stacked_data$date <- as.Date(stacked_data$date, format = "%d/%m/%Y")
+stacked_data$year_month <- format(stacked_data$date, "%Y-%m")
+
+stacked_data <- stacked_data |> left_join(risk_free, by = "year_month")|>
+  mutate(rf=rf/100)
+stacked_data$rm_minus_rf <- stacked_data$mkt_Port_Mean - stacked_data$rf
+
+names(stacked_data)
+
+table4_test1 <- stacked_data |> group_by("1935 to 1968") |> 
+  summarise(mkt_ret = mean(mkt_Port_Mean),rm_minus_rf = mean(rm_minus_rf) ,rf_mean = mean(rf), market_sharpe_ratio = mean(rm_minus_rf)/sd(mkt_Port_Mean), mkt_ret_sd = sd(mkt_Port_Mean),rf_sd = sd(rf))
+table4_test2 <- stacked_data |> group_by(subperiodlarge) |> 
+  summarise(mkt_ret = mean(mkt_Port_Mean),rm_minus_rf = mean(rm_minus_rf) ,rf_mean = mean(rf), market_sharpe_ratio = mean(rm_minus_rf)/sd(mkt_Port_Mean), mkt_ret_sd = sd(mkt_Port_Mean),rf_sd = sd(rf))
+table4_test3 <- stacked_data |> group_by(subperiodsmall) |> 
+  summarise(mkt_ret = mean(mkt_Port_Mean),rm_minus_rf = mean(rm_minus_rf) ,rf_mean = mean(rf), market_sharpe_ratio = mean(rm_minus_rf)/sd(mkt_Port_Mean), mkt_ret_sd = sd(mkt_Port_Mean),rf_sd = sd(rf))
+
+colnames(table4_test1)[1] <- "Period"
+colnames(table4_test2)[1] <- "Period"
+colnames(table4_test3)[1] <- "Period"
+
+
+summary_rm_and_rf <- bind_rows(table4_test1,table4_test2,table4_test3)
+summary_rm_and_rf
+
+summary_total
+summary_rm_and_rf
+names(summary_total)
+names(summary_rm_and_rf)
+
+Table4_summary <- left_join(summary_total, summary_rm_and_rf, by = "Period")
+Table4_summary$lambda1_Mean_by_mkt_ret_sd <- Table4_summary$lambda1_Mean/Table4_summary$mkt_ret_sd
+
+Table4_summary1 <- Table4_summary|> select(Period, mkt_ret, rm_minus_rf, lambda1_Mean, lambda0_Mean,
+                                           rf_mean, market_sharpe_ratio, lambda1_Mean_by_mkt_ret_sd, mkt_ret_sd, 
+                                           lambda1_SD, lambda0_SD, rf_sd)
+Table4_summary1
+
+#DESIGN FUNCTION FOR CALCULATING T-STATS ON LAMBDAS AND FIRST ORDER AUTO-CORRELATION OF LAMBDAS
+lambdas_with_rf_new <- stacked_data |>  filter(port == 1) |> left_join(lambdas_with_rf, by = c("year_month","date", "rf", "no_grouping")) |>
+  select(date, out, elt, lambda0, lambda1, rsquare, year_month, rf, lambda0rf, no_grouping, mkt_Port_Mean, rm_minus_rf, )
+lambdas_with_rf_new$obs <- 1
+lambdas_with_rf_new |> mutate(mkt_ret_tstat = (mean(mkt_Port_Mean)*sqrt(sum(obs)))/(sd(mkt_Port_Mean)))
+names(lambdas_with_rf_new)
+lambdas_with_rf_new$no_grouping
+
+for_tstat1 <- lambdas_with_rf_new |> group_by(no_grouping) |> 
+  summarise(mkt_ret_tstat = (mean(mkt_Port_Mean)*sqrt(sum(obs)))/(sd(mkt_Port_Mean)), 
+            rm_minus_rf_tstat = (mean(rm_minus_rf)*sqrt(sum(obs)))/(sd(rm_minus_rf)),
+            lambda1_tstat = (mean(lambda1)*sqrt(sum(obs)))/(sd(lambda1)), 
+            lambda0_tstat = (mean(lambda0)*sqrt(sum(obs)))/(sd(lambda0)),
+            corr_mkt_ret = cor(mkt_Port_Mean,lag(mkt_Port_Mean), use = "na.or.complete"),
+            corr_rm_minu_rf = cor(rm_minus_rf,lag(rm_minus_rf), use = "na.or.complete"),
+            corr_lambda1 = cor(lambda1,lag(lambda1), use = "na.or.complete"),
+            corr_lambda0 = cor(lambda0,lag(lambda0), use = "na.or.complete"),
+            corr_rf = cor(rf,lag(rf), use = "na.or.complete"))
+
+for_tstat2 <- lambdas_with_rf_new |> group_by(out) |> 
+  summarise(mkt_ret_tstat = (mean(mkt_Port_Mean)*sqrt(sum(obs)))/(sd(mkt_Port_Mean)), 
+            rm_minus_rf_tstat = (mean(rm_minus_rf)*sqrt(sum(obs)))/(sd(rm_minus_rf)),
+            lambda1_tstat = (mean(lambda1)*sqrt(sum(obs)))/(sd(lambda1)), 
+            lambda0_tstat = (mean(lambda0)*sqrt(sum(obs)))/(sd(lambda0)),
+            corr_mkt_ret = cor(mkt_Port_Mean,lag(mkt_Port_Mean), use = "na.or.complete"),
+            corr_rm_minu_rf = cor(rm_minus_rf,lag(rm_minus_rf), use = "na.or.complete"),
+            corr_lambda1 = cor(lambda1,lag(lambda1), use = "na.or.complete"),
+            corr_lambda0 = cor(lambda0,lag(lambda0), use = "na.or.complete"),
+            corr_rf = cor(rf,lag(rf), use = "na.or.complete"))
+
+for_tstat3 <- lambdas_with_rf_new |> group_by(elt) |> 
+  summarise(mkt_ret_tstat = (mean(mkt_Port_Mean)*sqrt(sum(obs)))/(sd(mkt_Port_Mean)), 
+            rm_minus_rf_tstat = (mean(rm_minus_rf)*sqrt(sum(obs)))/(sd(rm_minus_rf)),
+            lambda1_tstat = (mean(lambda1)*sqrt(sum(obs)))/(sd(lambda1)), 
+            lambda0_tstat = (mean(lambda0)*sqrt(sum(obs)))/(sd(lambda0)),
+            corr_mkt_ret = cor(mkt_Port_Mean,lag(mkt_Port_Mean), use = "na.or.complete"),
+            corr_rm_minu_rf = cor(rm_minus_rf,lag(rm_minus_rf), use = "na.or.complete"),
+            corr_lambda1 = cor(lambda1,lag(lambda1), use = "na.or.complete"),
+            corr_lambda0 = cor(lambda0,lag(lambda0), use = "na.or.complete"),
+            corr_rf = cor(rf,lag(rf), use = "na.or.complete"))
+
+colnames(for_tstat1)[1] <- "Period"
+colnames(for_tstat2)[1] <- "Period"
+colnames(for_tstat3)[1] <- "Period"
+
+tstat_summary <- bind_rows(for_tstat1,for_tstat2,for_tstat3)
+
+names(summary_total)
+names(Table4_summary1)
+names(tstat_summary)
+
+Table4_summary1 <- Table4_summary1 |> select(Period, mkt_ret, rm_minus_rf, lambda1_Mean, lambda0_Mean, rf_mean,
+                                             market_sharpe_ratio, lambda1_Mean_by_mkt_ret_sd, mkt_ret_sd, lambda1_SD, lambda0_SD, rf_sd)
+tstat_summary <- tstat_summary |> select(Period, mkt_ret_tstat, rm_minus_rf_tstat, lambda1_tstat, lambda0_tstat, 
+                                         corr_mkt_ret, corr_rm_minu_rf, corr_lambda1, corr_lambda0, corr_rf)
+Table4_total <- left_join(Table4_summary1, tstat_summary, by ="Period")
+Table4_total
+
+
+
+
