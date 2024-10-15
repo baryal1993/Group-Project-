@@ -1166,16 +1166,64 @@ p_beta <- fm_data_period %>%
 # View the beta estimation results
 print(head(p_beta))
 
-# Set period boundaries
+# Create portfolios based on the ranked betas
+p_beta <- p_beta %>%
+  group_by(date) %>%
+  mutate(portfolio = ntile(beta, 20)) %>%
+  ungroup()
+
+# View portfolio assignment
+print(head(p_beta))
+
 port_bdate <- ymd("1935-01-01")
 port_edate <- ymd("1968-06-30")
 
-# Preparing data for portfolio return and risk calculations
+# Prepare data for portfolio return and risk calculations
 for_port_ret <- fm_data_period %>%
   select(permno, date, ret) %>%
   filter(between(date, port_bdate, port_edate)) %>%
-  mutate(yr = year(date), p_yr = yr - 1) %>%
-  drop_na()
-# View data for portfolios
+  mutate(yr = year(date),    # Create the year variable
+         p_yr = yr - 1) %>%  # Create the previous year variable
+  filter(!is.na(ret))   
+
 print(head(for_port_ret))
+
+
+# Calculate portfolio returns by averaging returns for each portfolio for each year
+portfolio_returns <- for_port_ret %>%
+  inner_join(p_beta, by = c("permno", "yr" = "date")) %>%
+  group_by(p_yr, portfolio) %>%
+  summarise(portfolio_return = mean(ret, na.rm = TRUE)) %>%
+  ungroup()
+
+# View the calculated portfolio returns
+print(head(portfolio_returns))
+
+# If beta is not numeric, convert it
+p_beta <- p_beta %>%
+  mutate(beta = as.numeric(beta))
+
+sum(is.na(p_beta$beta))
+
+portfolio_full_period <- p_beta %>%
+  filter(date >= 1935 & date <= 1968) %>%
+  filter(!is.na(beta))
+
+# Ensure the portfolio returns are joined with the beta data
+portfolio_full_period <- portfolio_returns %>%
+  filter(p_yr >= 1935 & p_yr <= 1968) %>%
+  inner_join(p_beta, by = c("portfolio", "p_yr" = "date")) %>%
+  filter(!is.na(beta), !is.na(portfolio_return))
+
+
+# Filter data for the full period (1935-6/68)
+portfolio_full_period <- portfolio_returns %>%
+  filter(p_yr >= 1935 & p_yr <= 1968)
+
+# Run the cross-sectional regression of portfolio returns on beta and beta^2
+full_period_model <- lm(portfolio_return ~ beta + I(beta^2), data = portfolio_full_period)
+
+# Extract the regression summary
+full_period_summary <- summary(full_period_model)
+print(full_period_summary)
 
