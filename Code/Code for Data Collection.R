@@ -1227,3 +1227,81 @@ full_period_model <- lm(portfolio_return ~ beta + I(beta^2), data = portfolio_fu
 full_period_summary <- summary(full_period_model)
 print(full_period_summary)
 
+# Define the different periods for analysis
+periods <- list(
+  list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-6/68"),
+  list(start = ymd("1935-01-01"), end = ymd("1945-12-31"), label = "1935-45"),
+  list(start = ymd("1946-01-01"), end = ymd("1955-12-31"), label = "1946-55"),
+  list(start = ymd("1956-01-01"), end = ymd("1968-06-30"), label = "1956-6/68"),
+  list(start = ymd("1935-01-01"), end = ymd("1940-12-31"), label = "1935-40"),
+  list(start = ymd("1941-01-01"), end = ymd("1945-12-31"), label = "1941-45"),
+  list(start = ymd("1946-01-01"), end = ymd("1950-12-31"), label = "1946-50"),
+  list(start = ymd("1951-01-01"), end = ymd("1955-12-31"), label = "1951-55"),
+  list(start = ymd("1956-01-01"), end = ymd("1960-12-31"), label = "1956-60"),
+  list(start = ymd("1961-01-01"), end = ymd("1968-06-30"), label = "1961-6/68")
+)
+
+# Function to compute the required metrics for each period
+compute_period_metrics <- function(start_date, end_date, label) {
+  # Filter the data for the specific period
+  fm_data_period <- fm_data %>%
+    filter(date >= start_date & date <= end_date)
+  
+  # Apply the beta estimation as previously defined
+  portfolio_full_period <- p_beta %>%
+    filter(date >= year(start_date) & date <= year(end_date)) %>%
+    filter(!is.na(beta))
+  
+  # Run the regression for portfolio returns on beta and beta^2
+  portfolio_full_period <- portfolio_returns %>%
+    filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
+    inner_join(p_beta, by = c("portfolio", "p_yr" = "date")) %>%
+    filter(!is.na(beta), !is.na(portfolio_return))
+  
+  # Run the cross-sectional regression of portfolio returns on beta and beta^2
+  full_period_model <- lm(portfolio_return ~ beta + I(beta^2), data = portfolio_full_period)
+  
+  # Extract the regression summary
+  full_period_summary <- summary(full_period_model)
+  
+  # Extract key metrics
+  gamma_0 <- coef(full_period_summary)[1, 1]  # Intercept (gamma_0)
+  gamma_1 <- coef(full_period_summary)[2, 1]  # Beta coefficient (gamma_1)
+  s_gamma_0 <- coef(full_period_summary)[1, 2]  # Standard error of intercept
+  s_gamma_1 <- coef(full_period_summary)[2, 2]  # Standard error of beta
+  t_gamma_0 <- coef(full_period_summary)[1, 3]  # t-statistic for intercept
+  t_gamma_1 <- coef(full_period_summary)[2, 3]  # t-statistic for beta
+  r_squared <- full_period_summary$r.squared  # R-squared
+  residuals <- full_period_summary$residuals  # Residuals
+  s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of R-squared
+  
+  # Calculate gamma_0 - R_f
+  risk_free_rate <- 0.0013  # Example value, replace with actual
+  gamma_0_minus_rf <- gamma_0 - risk_free_rate
+  t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
+  
+  # Return the results for this period
+  return(data.frame(
+    Period = label,
+    gamma_0 = gamma_0,
+    gamma_1 = gamma_1,
+    gamma_0_minus_rf = gamma_0_minus_rf,
+    s_gamma_0 = s_gamma_0,
+    s_gamma_1 = s_gamma_1,
+    t_gamma_0 = t_gamma_0,
+    t_gamma_1 = t_gamma_1,
+    t_gamma_0_minus_rf = t_gamma_0_minus_rf,
+    r_squared = r_squared,
+    s_r_squared = s_r_squared
+  ))
+}
+
+all_period_results <- lapply(periods, function(period) {
+  compute_period_metrics(period$start, period$end, period$label)
+})
+
+# Combine the results into one table
+final_results <- do.call(rbind, all_period_results)
+
+# View the final results table
+print(final_results)
