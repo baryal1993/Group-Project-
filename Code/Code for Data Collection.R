@@ -1306,7 +1306,186 @@ final_results <- do.call(rbind, all_period_results)
 # View the final results table
 print(final_results)
 
+periods <- list(
+  list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-6/68"),
+  list(start = ymd("1935-01-01"), end = ymd("1945-12-31"), label = "1935-45"),
+  list(start = ymd("1946-01-01"), end = ymd("1955-12-31"), label = "1946-55"),
+  list(start = ymd("1956-01-01"), end = ymd("1968-06-30"), label = "1956-6/68"),
+  list(start = ymd("1935-01-01"), end = ymd("1940-12-31"), label = "1935-40"),
+  list(start = ymd("1941-01-01"), end = ymd("1945-12-31"), label = "1941-45"),
+  list(start = ymd("1946-01-01"), end = ymd("1950-12-31"), label = "1946-50"),
+  list(start = ymd("1951-01-01"), end = ymd("1955-12-31"), label = "1951-55"),
+  list(start = ymd("1956-01-01"), end = ymd("1960-12-31"), label = "1956-60"),
+  list(start = ymd("1961-01-01"), end = ymd("1968-06-30"), label = "1961-6/68")
+)
 
+# Function to compute the required metrics for Panel B for each period, including p0(y2)
+compute_panel_b_metrics <- function(start_date, end_date, label) {
+  # Filter the data for the specific period and make sure the rows are distinct
+  fm_data_period <- fm_data %>%
+    filter(date >= start_date & date <= end_date) %>%
+    distinct(date, fsi_rm)  # Keep only distinct date and market return values
+  
+  # Apply the beta estimation as previously defined for Panel B
+  portfolio_full_period <- p_beta %>%
+    filter(date >= year(start_date) & date <= year(end_date)) %>%
+    filter(!is.na(beta)) %>%
+    distinct(portfolio, date, .keep_all = TRUE)  # Ensure portfolio and date are unique
+  
+  # Ensure that the market return (fsi_rm) is available in the data by extracting the year from the date
+  portfolio_full_period <- portfolio_returns %>%
+    filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
+    distinct(portfolio, p_yr, .keep_all = TRUE) %>%  # Ensure uniqueness
+    inner_join(p_beta, by = c("portfolio", "p_yr" = "date")) %>%
+    left_join(fm_data_period %>% mutate(year = year(date)) %>% distinct(year, fsi_rm), 
+              by = c("p_yr" = "year")) %>%  # Join using distinct rows
+    filter(!is.na(beta), !is.na(portfolio_return))
+  
+  # Run the cross-sectional regression for Panel B
+  full_period_model_b <- lm(portfolio_return ~ beta + I(beta^2) + I(beta^3), data = portfolio_full_period)
+  
+  # Extract the regression summary
+  full_period_summary_b <- summary(full_period_model_b)
+  
+  # Extract key metrics for Panel B
+  gamma_0 <- coef(full_period_summary_b)[1, 1]  # Intercept (gamma_0)
+  gamma_1 <- coef(full_period_summary_b)[2, 1]  # Beta coefficient (gamma_1)
+  gamma_2 <- coef(full_period_summary_b)[3, 1]  # Second beta coefficient (gamma_2)
+  gamma_3 <- coef(full_period_summary_b)[4, 1]  # Third beta coefficient (gamma_3)
+  
+  # Standard errors
+  s_gamma_0 <- coef(full_period_summary_b)[1, 2]  # s(gamma_0)
+  s_gamma_1 <- coef(full_period_summary_b)[2, 2]  # s(gamma_1)
+  s_gamma_2 <- coef(full_period_summary_b)[3, 2]  # s(gamma_2)
+  
+  # t-statistics
+  t_gamma_0 <- coef(full_period_summary_b)[1, 3]  # t(gamma_0)
+  t_gamma_1 <- coef(full_period_summary_b)[2, 3]  # t(gamma_1)
+  
+  # R-squared
+  r_squared <- full_period_summary_b$r.squared
+  
+  # Residuals and standard deviation of R-squared
+  residuals <- full_period_summary_b$residuals  # Get residuals from the model
+  s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of squared residuals
+  
+  # Calculate gamma_0 - R_f
+  risk_free_rate <- 0.0013  # Example value, replace with actual
+  gamma_0_minus_rf <- gamma_0 - risk_free_rate
+  t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
+  
+  # Return the results for this period (for Panel B)
+  return(data.frame(
+    Period = label,
+    gamma_0 = gamma_0,
+    gamma_1 = gamma_1,
+    gamma_2 = gamma_2,
+    gamma_3 = gamma_3,
+    gamma_0_minus_rf = gamma_0_minus_rf,
+    s_gamma_0 = s_gamma_0,
+    s_gamma_1 = s_gamma_1,
+    s_gamma_2 = s_gamma_2,
+    t_gamma_0 = t_gamma_0,
+    t_gamma_1 = t_gamma_1,
+    t_gamma_0_minus_rf = t_gamma_0_minus_rf,
+    r_squared = r_squared,
+    s_r_squared = s_r_squared
+  ))
+}
+
+# Apply the function to each of the periods for Panel B
+all_panel_b_results <- lapply(periods, function(period) {
+  compute_panel_b_metrics(period$start, period$end, period$label)
+})
+
+# Combine the results into one table for Panel B
+final_panel_b_results <- do.call(rbind, all_panel_b_results)
+
+# View the final Panel B results table
+print(final_panel_b_results)
+
+# Function to compute the required metrics for Panel C
+compute_panel_c_metrics <- function(start_date, end_date, label) {
+  # Filter the data for the specific period
+  fm_data_period <- fm_data %>%
+    filter(date >= start_date & date <= end_date)
+  
+  # Apply the beta estimation as previously defined for Panel C
+  portfolio_full_period <- p_beta %>%
+    filter(date >= year(start_date) & date <= year(end_date)) %>%
+    filter(!is.na(beta))
+  
+  # Ensure that the market return (fsi_rm) is available in the data by extracting the year from the date
+  portfolio_full_period <- portfolio_returns %>%
+    filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
+    inner_join(p_beta, by = c("portfolio", "p_yr" = "date")) %>%
+    left_join(fm_data_period %>% mutate(year = year(date)) %>% select(year, fsi_rm), by = c("p_yr" = "year")) %>%
+    filter(!is.na(beta), !is.na(portfolio_return))
+  
+  # Run the cross-sectional regression for Panel C with beta^2 and beta^3
+  full_period_model_c <- lm(portfolio_return ~ beta + I(beta^2) + I(beta^3), data = portfolio_full_period)
+  
+  # Extract the regression summary
+  full_period_summary_c <- summary(full_period_model_c)
+  
+  # Extract key metrics for Panel C
+  gamma_0 <- coef(full_period_summary_c)[1, 1]  # Intercept (gamma_0)
+  gamma_1 <- coef(full_period_summary_c)[2, 1]  # Beta coefficient (gamma_1)
+  gamma_2 <- coef(full_period_summary_c)[3, 1]  # Second beta coefficient (gamma_2)
+  gamma_3 <- coef(full_period_summary_c)[4, 1]  # Third beta coefficient (gamma_3)
+  
+  # Standard errors
+  s_gamma_0 <- coef(full_period_summary_c)[1, 2]  # s(gamma_0)
+  s_gamma_1 <- coef(full_period_summary_c)[2, 2]  # s(gamma_1)
+  s_gamma_3 <- coef(full_period_summary_c)[4, 2]  # s(gamma_3)
+  
+  # t-statistics
+  t_gamma_0 <- coef(full_period_summary_c)[1, 3]  # t(gamma_0)
+  t_gamma_1 <- coef(full_period_summary_c)[2, 3]  # t(gamma_1)
+  t_gamma_3 <- coef(full_period_summary_c)[4, 3]  # t(gamma_3)
+  
+  # R-squared
+  r_squared <- full_period_summary_c$r.squared
+  
+  # Residuals and standard deviation of R-squared
+  residuals <- full_period_summary_c$residuals  # Get residuals from the model
+  s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of squared residuals
+  
+  # Calculate gamma_0 - R_f
+  risk_free_rate <- 0.0013  # Example value, replace with actual
+  gamma_0_minus_rf <- gamma_0 - risk_free_rate
+  t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
+  
+  # Return the results for this period (for Panel C)
+  return(data.frame(
+    Period = label,
+    gamma_0 = gamma_0,
+    gamma_1 = gamma_1,
+    gamma_2 = gamma_2,
+    gamma_3 = gamma_3,
+    gamma_0_minus_rf = gamma_0_minus_rf,
+    s_gamma_0 = s_gamma_0,
+    s_gamma_1 = s_gamma_1,
+    s_gamma_3 = s_gamma_3,
+    t_gamma_0 = t_gamma_0,
+    t_gamma_1 = t_gamma_1,
+    t_gamma_3 = t_gamma_3,
+    t_gamma_0_minus_rf = t_gamma_0_minus_rf,
+    r_squared = r_squared,
+    s_r_squared = s_r_squared
+  ))
+}
+
+# Compute metrics for each period
+all_panel_c_results <- lapply(periods, function(period) {
+  compute_panel_c_metrics(period$start, period$end, period$label)
+})
+
+# Combine the results into one table for Panel C
+final_panel_c_results <- do.call(rbind, all_panel_c_results)
+
+# Display the final results
+print(final_panel_c_results)
 
 
 ############################# initial code for table 4 #################
