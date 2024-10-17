@@ -1,1 +1,191 @@
 Report writing in R markdown
+title: "Final Project"
+author: "Wajeeha/Bibek"
+date: "2024-10-17"
+output: html_document
+---
+
+#Table
+
+```{r, table, echo=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+merged_portfolio_1934_38 <- read.csv("C:/test/MAF900/merged_portfolio_1934_38.csv")
+formatted_table_1934_38 <- data.frame(
+  Statistic = c(
+    "$\\beta_{p,t-1}$",  # Beta for portfolio (using LaTeX-style for better formatting)
+    "$s(\\beta)$",  # Standard error of beta
+    "$R^2 \\,(r(R_p, R_m)^2)$",  # R-squared
+    "$s(R_p)$",  # Standard deviation of portfolio returns
+    "$s(\\varepsilon_p)$",  # Standard deviation of residuals
+    "$\\bar{s}(\\varepsilon_i)$",  # Average residual standard deviation
+    "$\\frac{s(\\varepsilon_p)}{\\bar{s}(\\varepsilon_i)}$"  # Residual SD ratio
+  ),
+  `1` = round(c(merged_portfolio_1934_38$avg_beta[1], merged_portfolio_1934_38$avg_beta_se[1], 
+                merged_portfolio_1934_38$avg_r_squared[1], merged_portfolio_1934_38$avg_return_sd[1], 
+                merged_portfolio_1934_38$avg_residual_sd[1], merged_portfolio_1934_38$mean_residual_sd[1], 
+                merged_portfolio_1934_38$residual_ratio[1]), 4),
+  `2` = round(c(merged_portfolio_1934_38$avg_beta[2], merged_portfolio_1934_38$avg_beta_se[2], 
+                merged_portfolio_1934_38$avg_r_squared[2], merged_portfolio_1934_38$avg_return_sd[2], 
+                merged_portfolio_1934_38$avg_residual_sd[2], merged_portfolio_1934_38$mean_residual_sd[2], 
+                merged_portfolio_1934_38$residual_ratio[2]), 4),
+  `3` = round(c(merged_portfolio_1934_38$avg_beta[3], merged_portfolio_1934_38$avg_beta_se[3], 
+                merged_portfolio_1934_38$avg_r_squared[3], merged_portfolio_1934_38$avg_return_sd[3], 
+                merged_portfolio_1934_38$avg_residual_sd[3], merged_portfolio_1934_38$mean_residual_sd[3], 
+                merged_portfolio_1934_38$residual_ratio[3]), 4),
+  `4` = round(c(merged_portfolio_1934_38$avg_beta[4], merged_portfolio_1934_38$avg_beta_se[4], 
+                merged_portfolio_1934_38$avg_r_squared[4], merged_portfolio_1934_38$avg_return_sd[4], 
+                merged_portfolio_1934_38$avg_residual_sd[4], merged_portfolio_1934_38$mean_residual_sd[4], 
+                merged_portfolio_1934_38$residual_ratio[4]), 4),
+  `5` = round(c(merged_portfolio_1934_38$avg_beta[5], merged_portfolio_1934_38$avg_beta_se[5], 
+                merged_portfolio_1934_38$avg_r_squared[5], merged_portfolio_1934_38$avg_return_sd[5], 
+                merged_portfolio_1934_38$avg_residual_sd[5], merged_portfolio_1934_38$mean_residual_sd[5], 
+                merged_portfolio_1934_38$residual_ratio[5]), 4),
+  `6` = round(c(merged_portfolio_1934_38$avg_beta[6], merged_portfolio_1934_38$avg_beta_se[6], 
+                merged_portfolio_1934_38$avg_r_squared[6], merged_portfolio_1934_38$avg_return_sd[6], 
+                merged_portfolio_1934_38$avg_residual_sd[6], merged_portfolio_1934_38$mean_residual_sd[6], 
+                merged_portfolio_1934_38$residual_ratio[6]), 4),
+  `7` = round(c(merged_portfolio_1934_38$avg_beta[7], merged_portfolio_1934_38$avg_beta_se[7], 
+                merged_portfolio_1934_38$avg_r_squared[7], merged_portfolio_1934_38$avg_return_sd[7], 
+                merged_portfolio_1934_38$avg_residual_sd[7], merged_portfolio_1934_38$mean_residual_sd[7], 
+                merged_portfolio_1934_38$residual_ratio[7]), 4),
+  `8` = round(c(merged_portfolio_1934_38$avg_beta[8], merged_portfolio_1934_38$avg_beta_se[8], 
+                merged_portfolio_1934_38$avg_r_squared[8], merged_portfolio_1934_38$avg_return_sd[8], 
+                merged_portfolio_1934_38$avg_residual_sd[8], merged_portfolio_1934_38$mean_residual_sd[8], 
+                merged_portfolio_1934_38$residual_ratio[8]), 4),
+  `9` = round(c(merged_portfolio_1934_38$avg_beta[9], merged_portfolio_1934_38$avg_beta_se[9], 
+                merged_portfolio_1934_38$avg_r_squared[9], merged_portfolio_1934_38$avg_return_sd[9], 
+                merged_portfolio_1934_38$avg_residual_sd[9], merged_portfolio_1934_38$mean_residual_sd[9], 
+                merged_portfolio_1934_38$residual_ratio[9]), 4),
+  `10` = round(c(merged_portfolio_1934_38$avg_beta[10], merged_portfolio_1934_38$avg_beta_se[10], 
+                 merged_portfolio_1934_38$avg_r_squared[10], merged_portfolio_1934_38$avg_return_sd[10], 
+                 merged_portfolio_1934_38$avg_residual_sd[10], merged_portfolio_1934_38$mean_residual_sd[10], 
+                 merged_portfolio_1934_38$residual_ratio[10]), 4)
+)
+
+
+merged_portfolio_1942_46 <- read.csv("C:/test/MAF900/merged_portfolio_1942_46.csv")
+
+formatted_table_1942_46 <- data.frame(
+  Statistic = c(
+    "$\\beta_{p,t-1}$",  # Beta for portfolio (using LaTeX-style for better formatting)
+    "$s(\\beta)$",  # Standard error of beta
+    "$R^2 \\,(r(R_p, R_m)^2)$",  # R-squared
+    "$s(R_p)$",  # Standard deviation of portfolio returns
+    "$s(\\varepsilon_p)$",  # Standard deviation of residuals
+    "$\\bar{s}(\\varepsilon_i)$",  # Average residual standard deviation
+    "$\\frac{s(\\varepsilon_p)}{\\bar{s}(\\varepsilon_i)}$"  # Residual SD ratio
+  ),
+  `1` = round(c(merged_portfolio_1942_46$avg_beta[1], merged_portfolio_1942_46$avg_beta_se[1], merged_portfolio_1942_46$avg_r_squared[1],
+                merged_portfolio_1942_46$avg_return_sd[1], merged_portfolio_1942_46$avg_residual_sd[1], merged_portfolio_1942_46$mean_residual_sd[1], merged_portfolio_1942_46$residual_ratio[1]), 4),
+  `2` = round(c(merged_portfolio_1942_46$avg_beta[2], merged_portfolio_1942_46$avg_beta_se[2], merged_portfolio_1942_46$avg_r_squared[2],
+                merged_portfolio_1942_46$avg_return_sd[2], merged_portfolio_1942_46$avg_residual_sd[2], merged_portfolio_1942_46$mean_residual_sd[2], merged_portfolio_1942_46$residual_ratio[2]), 4),
+  `3` = round(c(merged_portfolio_1942_46$avg_beta[3], merged_portfolio_1942_46$avg_beta_se[3], merged_portfolio_1942_46$avg_r_squared[3],
+                merged_portfolio_1942_46$avg_return_sd[3], merged_portfolio_1942_46$avg_residual_sd[3], merged_portfolio_1942_46$mean_residual_sd[3], merged_portfolio_1942_46$residual_ratio[3]), 4),
+  `4` = round(c(merged_portfolio_1942_46$avg_beta[4], merged_portfolio_1942_46$avg_beta_se[4], merged_portfolio_1942_46$avg_r_squared[4],
+                merged_portfolio_1942_46$avg_return_sd[4], merged_portfolio_1942_46$avg_residual_sd[4], merged_portfolio_1942_46$mean_residual_sd[4], merged_portfolio_1942_46$residual_ratio[4]), 4),
+  `5` = round(c(merged_portfolio_1942_46$avg_beta[5], merged_portfolio_1942_46$avg_beta_se[5], merged_portfolio_1942_46$avg_r_squared[5],
+                merged_portfolio_1942_46$avg_return_sd[5], merged_portfolio_1942_46$avg_residual_sd[5], merged_portfolio_1942_46$mean_residual_sd[5], merged_portfolio_1942_46$residual_ratio[5]), 4),
+  `6` = round(c(merged_portfolio_1942_46$avg_beta[6], merged_portfolio_1942_46$avg_beta_se[6], merged_portfolio_1942_46$avg_r_squared[6],
+                merged_portfolio_1942_46$avg_return_sd[6], merged_portfolio_1942_46$avg_residual_sd[6], merged_portfolio_1942_46$mean_residual_sd[6], merged_portfolio_1942_46$residual_ratio[6]), 4),
+  `7` = round(c(merged_portfolio_1942_46$avg_beta[7], merged_portfolio_1942_46$avg_beta_se[7], merged_portfolio_1942_46$avg_r_squared[7],
+                merged_portfolio_1942_46$avg_return_sd[7], merged_portfolio_1942_46$avg_residual_sd[7], merged_portfolio_1942_46$mean_residual_sd[7], merged_portfolio_1942_46$residual_ratio[7]), 4),
+  `8` = round(c(merged_portfolio_1942_46$avg_beta[8], merged_portfolio_1942_46$avg_beta_se[8], merged_portfolio_1942_46$avg_r_squared[8],
+                merged_portfolio_1942_46$avg_return_sd[8], merged_portfolio_1942_46$avg_residual_sd[8], merged_portfolio_1942_46$mean_residual_sd[8], merged_portfolio_1942_46$residual_ratio[8]), 4),
+  `9` = round(c(merged_portfolio_1942_46$avg_beta[9], merged_portfolio_1942_46$avg_beta_se[9], merged_portfolio_1942_46$avg_r_squared[9],
+                merged_portfolio_1942_46$avg_return_sd[9], merged_portfolio_1942_46$avg_residual_sd[9], merged_portfolio_1942_46$mean_residual_sd[9], merged_portfolio_1942_46$residual_ratio[9]), 4),
+  `10` = round(c(merged_portfolio_1942_46$avg_beta[10], merged_portfolio_1942_46$avg_beta_se[10], merged_portfolio_1942_46$avg_r_squared[10],
+                 merged_portfolio_1942_46$avg_return_sd[10], merged_portfolio_1942_46$avg_residual_sd[10], merged_portfolio_1942_46$mean_residual_sd[10], merged_portfolio_1942_46$residual_ratio[10]), 4)
+)
+
+merged_portfolio_1950_54 <- read.csv("C:/test/MAF900/merged_portfolio_1950_54.csv")
+formatted_table_1950_54 <- data.frame(
+  Statistic = c(
+    "$\\beta_{p,t-1}$",  # Beta for portfolio (using LaTeX-style for better formatting)
+    "$s(\\beta)$",  # Standard error of beta
+    "$R^2 \\,(r(R_p, R_m)^2)$",  # R-squared
+    "$s(R_p)$",  # Standard deviation of portfolio returns
+    "$s(\\varepsilon_p)$",  # Standard deviation of residuals
+    "$\\bar{s}(\\varepsilon_i)$",  # Average residual standard deviation
+    "$\\frac{s(\\varepsilon_p)}{\\bar{s}(\\varepsilon_i)}$"  # Residual SD ratio
+  ),
+  `1` = round(c(merged_portfolio_1950_54$avg_beta[1], merged_portfolio_1950_54$avg_beta_se[1], merged_portfolio_1950_54$avg_r_squared[1],
+                merged_portfolio_1950_54$avg_return_sd[1], merged_portfolio_1950_54$avg_residual_sd[1], merged_portfolio_1950_54$mean_residual_sd[1], merged_portfolio_1950_54$residual_ratio[1]), 4),
+  `2` = round(c(merged_portfolio_1950_54$avg_beta[2], merged_portfolio_1950_54$avg_beta_se[2], merged_portfolio_1950_54$avg_r_squared[2],
+                merged_portfolio_1950_54$avg_return_sd[2], merged_portfolio_1950_54$avg_residual_sd[2], merged_portfolio_1950_54$mean_residual_sd[2], merged_portfolio_1950_54$residual_ratio[2]), 4),
+  `3` = round(c(merged_portfolio_1950_54$avg_beta[3], merged_portfolio_1950_54$avg_beta_se[3], merged_portfolio_1950_54$avg_r_squared[3],
+                merged_portfolio_1950_54$avg_return_sd[3], merged_portfolio_1950_54$avg_residual_sd[3], merged_portfolio_1950_54$mean_residual_sd[3], merged_portfolio_1950_54$residual_ratio[3]), 4),
+  `4` = round(c(merged_portfolio_1950_54$avg_beta[4], merged_portfolio_1950_54$avg_beta_se[4], merged_portfolio_1950_54$avg_r_squared[4],
+                merged_portfolio_1950_54$avg_return_sd[4], merged_portfolio_1950_54$avg_residual_sd[4], merged_portfolio_1950_54$mean_residual_sd[4], merged_portfolio_1950_54$residual_ratio[4]), 4),
+  `5` = round(c(merged_portfolio_1950_54$avg_beta[5], merged_portfolio_1950_54$avg_beta_se[5], merged_portfolio_1950_54$avg_r_squared[5],
+                merged_portfolio_1950_54$avg_return_sd[5], merged_portfolio_1950_54$avg_residual_sd[5], merged_portfolio_1950_54$mean_residual_sd[5], merged_portfolio_1950_54$residual_ratio[5]), 4),
+  `6` = round(c(merged_portfolio_1950_54$avg_beta[6], merged_portfolio_1950_54$avg_beta_se[6], merged_portfolio_1950_54$avg_r_squared[6],
+                merged_portfolio_1950_54$avg_return_sd[6], merged_portfolio_1950_54$avg_residual_sd[6], merged_portfolio_1950_54$mean_residual_sd[6], merged_portfolio_1950_54$residual_ratio[6]), 4),
+  `7` = round(c(merged_portfolio_1950_54$avg_beta[7], merged_portfolio_1950_54$avg_beta_se[7], merged_portfolio_1950_54$avg_r_squared[7],
+                merged_portfolio_1950_54$avg_return_sd[7], merged_portfolio_1950_54$avg_residual_sd[7], merged_portfolio_1950_54$mean_residual_sd[7], merged_portfolio_1950_54$residual_ratio[7]), 4),
+  `8` = round(c(merged_portfolio_1950_54$avg_beta[8], merged_portfolio_1950_54$avg_beta_se[8], merged_portfolio_1950_54$avg_r_squared[8],
+                merged_portfolio_1950_54$avg_return_sd[8], merged_portfolio_1950_54$avg_residual_sd[8], merged_portfolio_1950_54$mean_residual_sd[8], merged_portfolio_1950_54$residual_ratio[8]), 4),
+  `9` = round(c(merged_portfolio_1950_54$avg_beta[9], merged_portfolio_1950_54$avg_beta_se[9], merged_portfolio_1950_54$avg_r_squared[9],
+                merged_portfolio_1950_54$avg_return_sd[9], merged_portfolio_1950_54$avg_residual_sd[9], merged_portfolio_1950_54$mean_residual_sd[9], merged_portfolio_1950_54$residual_ratio[9]), 4),
+  `10` = round(c(merged_portfolio_1950_54$avg_beta[10], merged_portfolio_1950_54$avg_beta_se[10], merged_portfolio_1950_54$avg_r_squared[10],
+                 merged_portfolio_1950_54$avg_return_sd[10], merged_portfolio_1950_54$avg_residual_sd[10], merged_portfolio_1950_54$mean_residual_sd[10], merged_portfolio_1950_54$residual_ratio[10]), 4)
+)
+
+merged_portfolio_1958_62 <- read.csv("C:/test/MAF900/merged_portfolio_1958_62.csv")
+formatted_table_1958_62 <- data.frame(
+  Statistic = c(
+    "$\\beta_{p,t-1}$",  # Beta for portfolio (using LaTeX-style for better formatting)
+    "$s(\\beta)$",  # Standard error of beta
+    "$R^2 \\,(r(R_p, R_m)^2)$",  # R-squared
+    "$s(R_p)$",  # Standard deviation of portfolio returns
+    "$s(\\varepsilon_p)$",  # Standard deviation of residuals
+    "$\\bar{s}(\\varepsilon_i)$",  # Average residual standard deviation
+    "$\\frac{s(\\varepsilon_p)}{\\bar{s}(\\varepsilon_i)}$"  # Residual SD ratio
+  ),
+  `1` = round(c(merged_portfolio_1958_62$avg_beta[1], merged_portfolio_1958_62$avg_beta_se[1], merged_portfolio_1958_62$avg_r_squared[1],
+                merged_portfolio_1958_62$avg_return_sd[1], merged_portfolio_1958_62$avg_residual_sd[1], merged_portfolio_1958_62$mean_residual_sd[1], merged_portfolio_1958_62$residual_ratio[1]), 4),
+  `2` = round(c(merged_portfolio_1958_62$avg_beta[2], merged_portfolio_1958_62$avg_beta_se[2], merged_portfolio_1958_62$avg_r_squared[2],
+                merged_portfolio_1958_62$avg_return_sd[2], merged_portfolio_1958_62$avg_residual_sd[2], merged_portfolio_1958_62$mean_residual_sd[2], merged_portfolio_1958_62$residual_ratio[2]), 4),
+  `3` = round(c(merged_portfolio_1958_62$avg_beta[3], merged_portfolio_1958_62$avg_beta_se[3], merged_portfolio_1958_62$avg_r_squared[3],
+                merged_portfolio_1958_62$avg_return_sd[3], merged_portfolio_1958_62$avg_residual_sd[3], merged_portfolio_1958_62$mean_residual_sd[3], merged_portfolio_1958_62$residual_ratio[3]), 4),
+  `4` = round(c(merged_portfolio_1958_62$avg_beta[4], merged_portfolio_1958_62$avg_beta_se[4], merged_portfolio_1958_62$avg_r_squared[4],
+                merged_portfolio_1958_62$avg_return_sd[4], merged_portfolio_1958_62$avg_residual_sd[4], merged_portfolio_1958_62$mean_residual_sd[4], merged_portfolio_1958_62$residual_ratio[4]), 4),
+  `5` = round(c(merged_portfolio_1958_62$avg_beta[5], merged_portfolio_1958_62$avg_beta_se[5], merged_portfolio_1958_62$avg_r_squared[5],
+                merged_portfolio_1958_62$avg_return_sd[5], merged_portfolio_1958_62$avg_residual_sd[5], merged_portfolio_1958_62$mean_residual_sd[5], merged_portfolio_1958_62$residual_ratio[5]), 4),
+  `6` = round(c(merged_portfolio_1958_62$avg_beta[6], merged_portfolio_1958_62$avg_beta_se[6], merged_portfolio_1958_62$avg_r_squared[6],
+                merged_portfolio_1958_62$avg_return_sd[6], merged_portfolio_1958_62$avg_residual_sd[6], merged_portfolio_1958_62$mean_residual_sd[6], merged_portfolio_1958_62$residual_ratio[6]), 4),
+  `7` = round(c(merged_portfolio_1958_62$avg_beta[7], merged_portfolio_1958_62$avg_beta_se[7], merged_portfolio_1958_62$avg_r_squared[7],
+                merged_portfolio_1958_62$avg_return_sd[7], merged_portfolio_1958_62$avg_residual_sd[7], merged_portfolio_1958_62$mean_residual_sd[7], merged_portfolio_1958_62$residual_ratio[7]), 4),
+  `8` = round(c(merged_portfolio_1958_62$avg_beta[8], merged_portfolio_1958_62$avg_beta_se[8], merged_portfolio_1958_62$avg_r_squared[8],
+                merged_portfolio_1958_62$avg_return_sd[8], merged_portfolio_1958_62$avg_residual_sd[8], merged_portfolio_1958_62$mean_residual_sd[8], merged_portfolio_1958_62$residual_ratio[8]), 4),
+  `9` = round(c(merged_portfolio_1958_62$avg_beta[9], merged_portfolio_1958_62$avg_beta_se[9], merged_portfolio_1958_62$avg_r_squared[9],
+                merged_portfolio_1958_62$avg_return_sd[9], merged_portfolio_1958_62$avg_residual_sd[9], merged_portfolio_1958_62$mean_residual_sd[9], merged_portfolio_1958_62$residual_ratio[9]), 4),
+  `10` = round(c(merged_portfolio_1958_62$avg_beta[10], merged_portfolio_1958_62$avg_beta_se[10], merged_portfolio_1958_62$avg_r_squared[10],
+                 merged_portfolio_1958_62$avg_return_sd[10], merged_portfolio_1958_62$avg_residual_sd[10], merged_portfolio_1958_62$mean_residual_sd[10], merged_portfolio_1958_62$residual_ratio[10]), 4)
+)
+
+# Create the headers without using NA, and make them centered across all 10 columns
+header_1934_38 <- data.frame(Statistic = "Portfolios for Estimation Period 1934-38", `1` = "", `2` = "", `3` = "", `4` = "", `5` = "", `6` = "", `7` = "", `8` = "", `9` = "", `10` = "")
+header_1942_46 <- data.frame(Statistic = "Portfolios for Estimation Period 1942-46", `1` = "", `2` = "", `3` = "", `4` = "", `5` = "", `6` = "", `7` = "", `8` = "", `9` = "", `10` = "")
+header_1950_54 <- data.frame(Statistic = "Portfolios for Estimation Period 1950-54", `1` = "", `2` = "", `3` = "", `4` = "", `5` = "", `6` = "", `7` = "", `8` = "", `9` = "", `10` = "")
+header_1958_62 <- data.frame(Statistic = "Portfolios for Estimation Period 1958-62", `1` = "", `2` = "", `3` = "", `4` = "", `5` = "", `6` = "", `7` = "", `8` = "", `9` = "", `10` = "")
+
+# Combine all tables and insert the headers before each period
+combined_table_with_headers <- rbind(
+  header_1934_38, formatted_table_1934_38,
+  header_1942_46, formatted_table_1942_46,
+  header_1950_54, formatted_table_1950_54,
+  header_1958_62, formatted_table_1958_62
+)
+
+# Output the combined table with title and subtitle, bold and centered headers
+kable(combined_table_with_headers, format = "html", col.names = c("Statistic", paste0(1:10))) %>%
+  add_header_above(c(" " = 1, "Sample selected for four selected estimation periods" = 10), bold = TRUE) %>%  # Title "Sample selected for four selected estimation periods"
+  add_header_above(c(" " = 1, "Table 2" = 10), bold = FALSE) %>%  # Subtitle
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  row_spec(c(1, 9, 17, 25), bold = TRUE, background = "#D3D3D3", align = "c")
+
+
+```
