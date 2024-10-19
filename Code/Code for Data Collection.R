@@ -884,6 +884,32 @@ write.csv(merged_portfolio_2018_22, file_path, row.names = FALSE)
 
 
 ############### For Table 3  ###############
+  temp <- tempfile(fileext = ".zip")
+  download.file("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip",temp)
+  temp1 <- unzip(temp, exdir = ".")
+  
+  ff_3factors_monthly <- read.csv(temp1, skip=5, header = F) 
+  names(ff_3factors_monthly) <- c('dt', 'rmrf', 'smb', 'hml', 'rf')
+  unlink(temp)
+  unlink(temp1)
+  head(ff_3factors_monthly)
+  
+  ff_3factors_mon <- ff_3factors_monthly |> 
+    filter(nchar(dt) == 6) |> 
+    mutate(yr = str_sub(dt,1,4), mon= str_sub(dt,-2,-1),  
+           date = make_date(year= yr, month = mon, day = 01),
+           mkt_excess = as.numeric(rmrf), smb = as.numeric(smb),
+           hml = as.numeric(hml), rf = as.numeric(rf)) |> 
+    select(c('date','mkt_excess','smb','hml','rf'))
+  ff_3factors_mon <- as_tibble(ff_3factors_mon)
+  
+  ff_3factors_mon$date <- as.Date(ff_3factors_mon$date)
+  ff_3factors_mon$date <- ceiling_date(ff_3factors_mon$date, "month") - days(1)
+  ff_3factors_mon$year_month <- format(ff_3factors_mon$date, "%Y-%m")
+  
+  risk_free<-ff_3factors_mon|>
+    select(rf, year_month)|>
+    mutate(rf=rf/100)
 start_date <- ymd("1935-01-01")
 end_date <- ymd("1968-06-30")
 
@@ -997,14 +1023,6 @@ portfolio_full_period <- portfolio_returns %>%
 portfolio_full_period <- portfolio_returns %>%
   filter(p_yr >= 1935 & p_yr <= 1968)
 
-# Run the cross-sectional regression of portfolio returns on beta and beta^2
-full_period_model <- lm(portfolio_return ~ beta + I(beta^2), data = portfolio_full_period)
-
-# Extract the regression summary
-full_period_summary <- summary(full_period_model)
-print(full_period_summary)
-
-# Define the different periods for analysis
 periods <- list(
   list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-6/68"),
   list(start = ymd("1935-01-01"), end = ymd("1945-12-31"), label = "1935-45"),
@@ -1018,11 +1036,17 @@ periods <- list(
   list(start = ymd("1961-01-01"), end = ymd("1968-06-30"), label = "1961-6/68")
 )
 
-# Function to compute the required metrics for each period
-compute_period_metrics <- function(start_date, end_date, label) {
+compute_period_metrics <- function(start_date, end_date, label, risk_free) {
   # Filter the data for the specific period
   fm_data_period <- fm_data %>%
     filter(date >= start_date & date <= end_date)
+  
+  # Filter the risk-free rate for the corresponding period
+  risk_free_period <- risk_free %>%
+    filter(year_month >= format(start_date, "%Y-%m") & year_month <= format(end_date, "%Y-%m"))
+  
+  # Compute the average risk-free rate over the period
+  avg_rf <- mean(risk_free_period$rf, na.rm = TRUE)
   
   # Apply the beta estimation as previously defined
   portfolio_full_period <- p_beta %>%
@@ -1052,9 +1076,8 @@ compute_period_metrics <- function(start_date, end_date, label) {
   residuals <- full_period_summary$residuals  # Residuals
   s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of R-squared
   
-  # Calculate gamma_0 - R_f
-  risk_free_rate <- 0.0013  # Example value, replace with actual
-  gamma_0_minus_rf <- gamma_0 - risk_free_rate
+  # Calculate gamma_0 - R_f using the actual average risk-free rate
+  gamma_0_minus_rf <- gamma_0 - avg_rf
   t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
   
   # Return the results for this period
@@ -1073,113 +1096,109 @@ compute_period_metrics <- function(start_date, end_date, label) {
   ))
 }
 
+# Loop over the periods and compute the results
 all_period_results <- lapply(periods, function(period) {
-  compute_period_metrics(period$start, period$end, period$label)
+  compute_period_metrics(period$start, period$end, period$label, risk_free)
 })
 
 # Combine the results into one table
-final_results <- do.call(rbind, all_period_results)
+final_results_panel_A <- do.call(rbind, all_period_results)
 
-# View the final results table
-print(final_results)
+file_path <- "C:/test/MAF900/final_result_panel_A.csv"
 
-periods <- list(
-  list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-6/68"),
-  list(start = ymd("1935-01-01"), end = ymd("1945-12-31"), label = "1935-45"),
-  list(start = ymd("1946-01-01"), end = ymd("1955-12-31"), label = "1946-55"),
-  list(start = ymd("1956-01-01"), end = ymd("1968-06-30"), label = "1956-6/68"),
-  list(start = ymd("1935-01-01"), end = ymd("1940-12-31"), label = "1935-40"),
-  list(start = ymd("1941-01-01"), end = ymd("1945-12-31"), label = "1941-45"),
-  list(start = ymd("1946-01-01"), end = ymd("1950-12-31"), label = "1946-50"),
-  list(start = ymd("1951-01-01"), end = ymd("1955-12-31"), label = "1951-55"),
-  list(start = ymd("1956-01-01"), end = ymd("1960-12-31"), label = "1956-60"),
-  list(start = ymd("1961-01-01"), end = ymd("1968-06-30"), label = "1961-6/68")
-)
+# Save the dataset as a CSV file
+write.csv(final_results_panel_A, file_path, row.names = FALSE)
 
-# Function to compute the required metrics for Panel B for each period, including p0(y2)
-compute_panel_b_metrics <- function(start_date, end_date, label) {
-  # Filter the data for the specific period and make sure the rows are distinct
-  fm_data_period <- fm_data %>%
-    filter(date >= start_date & date <= end_date) %>%
-    distinct(date, fsi_rm)  # Keep only distinct date and market return values
+  # Function to compute the required metrics for each period for Panel B, including actual risk-free rate
+  compute_panel_b_metrics <- function(start_date, end_date, label, risk_free) {
+    # Filter the data for the specific period and make sure the rows are distinct
+    fm_data_period <- fm_data %>%
+      filter(date >= start_date & date <= end_date) %>%
+      distinct(date, fsi_rm)  # Keep only distinct date and market return values
+    
+    # Filter the risk-free rate for the corresponding period
+    risk_free_period <- risk_free %>%
+      filter(year_month >= format(start_date, "%Y-%m") & year_month <= format(end_date, "%Y-%m"))
+    
+    # Compute the average risk-free rate over the period
+    avg_rf <- mean(risk_free_period$rf, na.rm = TRUE)
+    
+    # Apply the beta estimation as previously defined for Panel B
+    portfolio_full_period <- p_beta %>%
+      filter(date >= year(start_date) & date <= year(end_date)) %>%
+      filter(!is.na(beta)) %>%
+      distinct(portfolio, date, .keep_all = TRUE)  # Ensure portfolio and date are unique
+    
+    # Ensure that the market return (fsi_rm) is available in the data by extracting the year from the date
+    portfolio_full_period <- portfolio_returns %>%
+      filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
+      distinct(portfolio, p_yr, .keep_all = TRUE) %>%  # Ensure uniqueness
+      inner_join(p_beta, by = c("portfolio", "p_yr" = "date")) %>%
+      left_join(fm_data_period %>% mutate(year = year(date)) %>% distinct(year, fsi_rm), 
+                by = c("p_yr" = "year")) %>%  # Join using distinct rows
+      filter(!is.na(beta), !is.na(portfolio_return))
+    
+    # Run the cross-sectional regression for Panel B
+    full_period_model_b <- lm(portfolio_return ~ beta + I(beta^2) + I(beta^3), data = portfolio_full_period)
+    
+    # Extract the regression summary
+    full_period_summary_b <- summary(full_period_model_b)
+    
+    # Extract key metrics for Panel B
+    gamma_0 <- coef(full_period_summary_b)[1, 1]  # Intercept (gamma_0)
+    gamma_1 <- coef(full_period_summary_b)[2, 1]  # Beta coefficient (gamma_1)
+    gamma_2 <- coef(full_period_summary_b)[3, 1]  # Second beta coefficient (gamma_2)
+    gamma_3 <- coef(full_period_summary_b)[4, 1]  # Third beta coefficient (gamma_3)
+    
+    # Standard errors
+    s_gamma_0 <- coef(full_period_summary_b)[1, 2]  # s(gamma_0)
+    s_gamma_1 <- coef(full_period_summary_b)[2, 2]  # s(gamma_1)
+    s_gamma_2 <- coef(full_period_summary_b)[3, 2]  # s(gamma_2)
+    
+    # t-statistics
+    t_gamma_0 <- coef(full_period_summary_b)[1, 3]  # t(gamma_0)
+    t_gamma_1 <- coef(full_period_summary_b)[2, 3]  # t(gamma_1)
+    
+    # R-squared
+    r_squared <- full_period_summary_b$r.squared
+    
+    # Residuals and standard deviation of R-squared
+    residuals <- full_period_summary_b$residuals  # Get residuals from the model
+    s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of squared residuals
+    
+    # Calculate gamma_0 - R_f using the actual average risk-free rate
+    gamma_0_minus_rf <- gamma_0 - avg_rf
+    t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
+    
+    # Return the results for this period (for Panel B)
+    return(data.frame(
+      Period = label,
+      gamma_0 = gamma_0,
+      gamma_1 = gamma_1,
+      gamma_2 = gamma_2,
+      gamma_3 = gamma_3,
+      gamma_0_minus_rf = gamma_0_minus_rf,
+      s_gamma_0 = s_gamma_0,
+      s_gamma_1 = s_gamma_1,
+      s_gamma_2 = s_gamma_2,
+      t_gamma_0 = t_gamma_0,
+      t_gamma_1 = t_gamma_1,
+      t_gamma_0_minus_rf = t_gamma_0_minus_rf,
+      r_squared = r_squared,
+      s_r_squared = s_r_squared
+    ))
+  }
   
-  # Apply the beta estimation as previously defined for Panel B
-  portfolio_full_period <- p_beta %>%
-    filter(date >= year(start_date) & date <= year(end_date)) %>%
-    filter(!is.na(beta)) %>%
-    distinct(portfolio, date, .keep_all = TRUE)  # Ensure portfolio and date are unique
+  # Apply the function to each of the periods for Panel B
+  all_panel_b_results <- lapply(periods, function(period) {
+    compute_panel_b_metrics(period$start, period$end, period$label, risk_free)
+  })
   
-  # Ensure that the market return (fsi_rm) is available in the data by extracting the year from the date
-  portfolio_full_period <- portfolio_returns %>%
-    filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
-    distinct(portfolio, p_yr, .keep_all = TRUE) %>%  # Ensure uniqueness
-    inner_join(p_beta, by = c("portfolio", "p_yr" = "date")) %>%
-    left_join(fm_data_period %>% mutate(year = year(date)) %>% distinct(year, fsi_rm), 
-              by = c("p_yr" = "year")) %>%  # Join using distinct rows
-    filter(!is.na(beta), !is.na(portfolio_return))
+  # Combine the results into one table for Panel B
+  Panel_B <- do.call(rbind, all_panel_b_results)
   
-  # Run the cross-sectional regression for Panel B
-  full_period_model_b <- lm(portfolio_return ~ beta + I(beta^2) + I(beta^3), data = portfolio_full_period)
-  
-  # Extract the regression summary
-  full_period_summary_b <- summary(full_period_model_b)
-  
-  # Extract key metrics for Panel B
-  gamma_0 <- coef(full_period_summary_b)[1, 1]  # Intercept (gamma_0)
-  gamma_1 <- coef(full_period_summary_b)[2, 1]  # Beta coefficient (gamma_1)
-  gamma_2 <- coef(full_period_summary_b)[3, 1]  # Second beta coefficient (gamma_2)
-  gamma_3 <- coef(full_period_summary_b)[4, 1]  # Third beta coefficient (gamma_3)
-  
-  # Standard errors
-  s_gamma_0 <- coef(full_period_summary_b)[1, 2]  # s(gamma_0)
-  s_gamma_1 <- coef(full_period_summary_b)[2, 2]  # s(gamma_1)
-  s_gamma_2 <- coef(full_period_summary_b)[3, 2]  # s(gamma_2)
-  
-  # t-statistics
-  t_gamma_0 <- coef(full_period_summary_b)[1, 3]  # t(gamma_0)
-  t_gamma_1 <- coef(full_period_summary_b)[2, 3]  # t(gamma_1)
-  
-  # R-squared
-  r_squared <- full_period_summary_b$r.squared
-  
-  # Residuals and standard deviation of R-squared
-  residuals <- full_period_summary_b$residuals  # Get residuals from the model
-  s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of squared residuals
-  
-  # Calculate gamma_0 - R_f
-  risk_free_rate <- 0.0013  # Example value, replace with actual
-  gamma_0_minus_rf <- gamma_0 - risk_free_rate
-  t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
-  
-  # Return the results for this period (for Panel B)
-  return(data.frame(
-    Period = label,
-    gamma_0 = gamma_0,
-    gamma_1 = gamma_1,
-    gamma_2 = gamma_2,
-    gamma_3 = gamma_3,
-    gamma_0_minus_rf = gamma_0_minus_rf,
-    s_gamma_0 = s_gamma_0,
-    s_gamma_1 = s_gamma_1,
-    s_gamma_2 = s_gamma_2,
-    t_gamma_0 = t_gamma_0,
-    t_gamma_1 = t_gamma_1,
-    t_gamma_0_minus_rf = t_gamma_0_minus_rf,
-    r_squared = r_squared,
-    s_r_squared = s_r_squared
-  ))
-}
-
-# Apply the function to each of the periods for Panel B
-all_panel_b_results <- lapply(periods, function(period) {
-  compute_panel_b_metrics(period$start, period$end, period$label)
-})
-
-# Combine the results into one table for Panel B
-final_panel_b_results <- do.call(rbind, all_panel_b_results)
-
-# View the final Panel B results table
-print(final_panel_b_results)
+  file_path <- "C:/test/MAF900/Panel_B.csv"
+  write.csv(Panel_B, file_path, row.names = FALSE)
 
 # Function to compute the required metrics for Panel C
 compute_panel_c_metrics <- function(start_date, end_date, label) {
