@@ -40,7 +40,7 @@ FM_ret <- msf_db |>
   ) |> collect()
 
 
-### Stock and Excchage Identifier, selecting NYSE
+## Stock and Excchage Identifier, selecting NYSE
 msenames_db <- tbl(wrds, sql("select * from crsp.msenames"))
 fm_stockids <- msenames_db |>
   select (permno, primexch)|> collect()|>unique()|> filter(primexch == 'N')
@@ -62,7 +62,6 @@ dbWriteTable(MAF900_data,
              overwrite = TRUE)
 
 
-
 ###  Create Fisher Index - for Rm ##
 Fs_Idx <- fm_data|> group_by(date)|> summarise(fsi_rm = mean(ret, na.rm = TRUE))
 
@@ -81,8 +80,7 @@ Fs_Idx <- fm_data |>
 fm_data <- fm_data |> 
   left_join(Fs_Idx, by = "date")
 
-
-# Portfolio formation, estimation, and testing periods (extended until 2023)
+# Portfolio formation, estimation, and testing periods (it is similar to article for sample period and have extended until 2023 using the general trend, we have extedned tetsing period of eriod 9 to 19-67 to 19-70 as we have data now)
 periods <- tibble(
   formation_start = c("1926-01-01", "1927-01-01", "1931-01-01", "1935-01-01", "1939-01-01", "1943-01-01", 
                       "1947-01-01", "1951-01-01", "1955-01-01", "1959-01-01", "1963-01-01", "1967-01-01", 
@@ -110,7 +108,7 @@ periods <- tibble(
                        "2010-12-31", "2014-12-31", "2018-12-31", "2022-12-31", "2023-12-31")
 )
   
-  # Function to estimate beta, with min_obs default set to 60 for estimation periods
+# Function to estimate beta, with min_obs default set to 60 for estimation periods (60 months in 5 years)
   estimate_beta <- function(data, min_obs = 60) {
     # Ensure there are no missing values in ret and fsi_rm (market return)
     data <- data |> filter(complete.cases(ret, fsi_rm))
@@ -123,7 +121,6 @@ periods <- tibble(
       return(coef(fit)[2])  # Return the beta (slope)
     }
   }
-  
   # Proceed with portfolio formation and beta estimation with 48 observations for formation and 60 for estimation
   summary_table <- tibble(
     period = integer(),
@@ -133,16 +130,17 @@ periods <- tibble(
     total_securities = integer(),
     securities_with_data = integer()
   )
-  
+
+  # Set the iteration process
   for (i in 1:nrow(periods)) {
     
-    # Set portfolio formation period
-    port_form_bdate <- periods$formation_start[i]
-    port_form_edate <- periods$formation_end[i]
+    # Set portfolio formation period, converting to Date
+    port_form_bdate <- as.Date(periods$formation_start[i])
+    port_form_edate <- as.Date(periods$formation_end[i])
     
-    # Set estimation period
-    est_start <- periods$estimation_start[i]
-    est_end <- periods$estimation_end[i]
+    # Set estimation period, converting to Date
+    est_start <- as.Date(periods$estimation_start[i])
+    est_end <- as.Date(periods$estimation_end[i])
     
     # Filter the data for the formation period
     formation_data <- fm_data |> 
@@ -159,10 +157,14 @@ periods <- tibble(
       distinct(permno) |> 
       nrow()
     
-    # Calculate the number of securities that meet the formation period data requirement (48 observations)
+    # Apply the observation requirement:
+    # - First period must have at least 48 observations
+    # - Rest of the periods must have at least 60 observations
+    min_obs <- if (i == 1) 48 else 60
+    # Filter securities based on the number of required observations
     securities_with_data_formation <- formation_data |> 
       group_by(permno) |> 
-      filter(n() >= 48) |>  # Filter securities with at least 48 observations
+      filter(n() >= min_obs) |>  # Apply the observation requirement
       ungroup() |> 
       distinct(permno) |> 
       nrow()
@@ -172,15 +174,20 @@ periods <- tibble(
       period = i,
       formation_period = paste0(year(port_form_bdate), "-", year(port_form_edate)),
       estimation_period = paste0(year(est_start), "-", year(est_end)),
-      testing_period = paste0(year(periods$testing_start[i]), "-", year(periods$testing_end[i])),
+      testing_period = paste0(year(as.Date(periods$testing_start[i])), "-", year(as.Date(periods$testing_end[i]))),
       total_securities = total_stocks,
       securities_with_data = securities_with_data_formation
     )
   }
- print(summary_table)
   
-###############Table 2 Portfolio for Estimation##################
-
+ print(summary_table)
+ 
+### Table 1 created.   
+### End of table 1.  
+ 
+ 
+########Table 2 Portfolio for Estimation########
+# selecting period as per article 
 estimation_periods <- list(
   c("1934-01-01", "1938-12-31"),
   c("1942-01-01", "1946-12-31"),
@@ -313,8 +320,6 @@ mean_residual_sd_1934_38 <- calculate_mean_residual_sd(fm_data_1934_38_clean)
 print(mean_residual_sd_1934_38)
 
 
-# Assuming both data frames have a common "Portfolio" column
-
 # Merge the two data frames
 merged_portfolio_1934_38 <- portfolio_estimation_1934_38 %>%
   left_join(mean_residual_sd_1934_38, by = "Portfolio")
@@ -323,7 +328,7 @@ merged_portfolio_1934_38 <- portfolio_estimation_1934_38 %>%
 print(merged_portfolio_1934_38)
 
 # Specify the path to save the file
-file_path <- "C:/test/MAF900/merged_portfolio_1934_38.csv"
+file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
 
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_1934_38, file_path, row.names = FALSE)
@@ -458,7 +463,7 @@ merged_portfolio_1942_46 <- portfolio_estimation_1942_46 %>%
 print(merged_portfolio_1942_46)
 
 # Specify the path to save the file
-file_path <- "C:/test/MAF900/merged_portfolio_1942_46.csv"
+file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
 
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_1942_46, file_path, row.names = FALSE)
@@ -552,7 +557,7 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
     }) %>%
     ungroup()
   
-  # Step 2: Assign portfolios based on beta (already done in your main code)
+  # Step 2: Assign portfolios based on beta
   betas_and_residuals <- betas_and_residuals %>%
     arrange(residual_sd) %>%
     mutate(Portfolio = ntile(residual_sd, num_portfolios))  # Assign securities to portfolios
@@ -578,13 +583,13 @@ merged_portfolio_1950_54 <- portfolio_estimation_1950_54 %>%
 print(merged_portfolio_1950_54)
 
 # Specify the path to save the file
-file_path <- "C:/test/MAF900/merged_portfolio_1950_54.csv"
+file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
 
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_1950_54, file_path, row.names = FALSE)
 
-#Portfolio for Estimation Period 1958-62
 
+#Portfolio for Estimation Period 1958-62
 start_date <- as.Date("1958-01-01")
 end_date <- as.Date("1962-12-31")
 
@@ -659,7 +664,7 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
     }) %>%
     ungroup()
   
-  # Step 2: Assign portfolios based on beta (already done in your main code)
+  # Step 2: Assign portfolios based on beta
   betas_and_residuals <- betas_and_residuals %>%
     arrange(residual_sd) %>%
     mutate(Portfolio = ntile(residual_sd, num_portfolios))  
@@ -679,11 +684,12 @@ merged_portfolio_1958_62 <- portfolio_estimation_1958_62 %>%
   left_join(mean_residual_sd_1958_62, by = "Portfolio")
 
 # Specify the path to save the file
-file_path <- "C:/test/MAF900/merged_portfolio_1958_62.csv"
+file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
 
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_1958_62, file_path, row.names = FALSE)
 
+### extending to period having world financial crisis
 start_date <- as.Date("2006-01-01")
 end_date <- as.Date("2010-12-31")
 
@@ -758,7 +764,7 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
     }) %>%
     ungroup()
   
-  # Step 2: Assign portfolios based on beta (already done in your main code)
+  # Step 2: Assign portfolios based on beta 
   betas_and_residuals <- betas_and_residuals %>%
     arrange(residual_sd) %>%
     mutate(Portfolio = ntile(residual_sd, num_portfolios))  
@@ -778,11 +784,13 @@ merged_portfolio_2006_10 <- portfolio_estimation_2006_10 %>%
   left_join(mean_residual_sd_2006_10, by = "Portfolio")
 
 # Specify the path to save the file
-file_path <- "C:/test/MAF900/merged_portfolio_2006_10.csv"
+file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
 
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_2006_10, file_path, row.names = FALSE)
 
+
+## now adding period with COVID 2019 
 start_date <- as.Date("2018-01-01")
 end_date <- as.Date("2022-12-31")
 
@@ -877,7 +885,7 @@ merged_portfolio_2018_22 <- portfolio_estimation_2018_22 %>%
   left_join(mean_residual_sd_2018_22, by = "Portfolio")
 
 # Specify the path to save the file
-file_path <- "C:/test/MAF900/merged_portfolio_2018_22.csv"
+file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
 
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_2018_22, file_path, row.names = FALSE)
