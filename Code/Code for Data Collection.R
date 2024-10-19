@@ -1288,94 +1288,100 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
   # Display the final results for Panel C
   print(Panel_c)
 
-# Function to compute the required metrics for Panel D, including actual risk-free rate
-compute_panel_d_metrics <- function(start_date, end_date, label, risk_free) {
-  # Filter the data for the specific period
-  fm_data_period <- fm_data %>%
-    filter(date >= start_date & date <= end_date)
+  # Function to compute the required metrics for Panel D, using actual risk-free rate from data
+  compute_panel_d_metrics <- function(start_date, end_date, label, risk_free) {
+    # Filter fm_data for the specific period and ensure uniqueness
+    fm_data_period <- fm_data %>%
+      filter(date >= start_date & date <= end_date) %>%
+      distinct(date, fsi_rm)  # Select distinct dates and market returns
+    
+    # Filter risk-free data for the corresponding period
+    risk_free_period <- risk_free %>%
+      filter(year_month >= format(start_date, "%Y-%m") & year_month <= format(end_date, "%Y-%m"))
+    
+    # Compute the average risk-free rate over the period
+    avg_rf <- mean(risk_free_period$rf, na.rm = TRUE)
+    
+    # Ensure unique p_beta data for the period
+    p_beta_period <- p_beta %>%
+      filter(date >= year(start_date) & date <= year(end_date)) %>%
+      distinct(portfolio, date, .keep_all = TRUE)  # Ensure unique portfolios and dates
+    
+    # Ensure unique portfolio_returns and join with p_beta
+    portfolio_full_period <- portfolio_returns %>%
+      filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
+      distinct(portfolio, p_yr, .keep_all = TRUE) %>%  # Ensure uniqueness before joining
+      inner_join(p_beta_period, by = c("portfolio", "p_yr" = "date")) %>%
+      left_join(fm_data_period %>% mutate(year = year(date)) %>% distinct(year, fsi_rm), 
+                by = c("p_yr" = "year")) %>%
+      filter(!is.na(beta), !is.na(portfolio_return))
+    
+    # Check for duplicates to avoid memory issues (for debugging purposes, can be commented out)
+    # print(portfolio_full_period %>% group_by(portfolio, p_yr) %>% summarise(n = n()) %>% filter(n > 1))
+    
+    # Run the cross-sectional regression for Panel D with beta^2 and beta^3
+    full_period_model_d <- lm(portfolio_return ~ beta + I(beta^2) + I(beta^3), data = portfolio_full_period)
+    
+    # Extract the regression summary
+    full_period_summary_d <- summary(full_period_model_d)
+    
+    # Extract key metrics for Panel D
+    gamma_0 <- coef(full_period_summary_d)[1, 1]  # Intercept (gamma_0)
+    gamma_1 <- coef(full_period_summary_d)[2, 1]  # Beta coefficient (gamma_1)
+    gamma_2 <- coef(full_period_summary_d)[3, 1]  # Second beta coefficient (gamma_2)
+    gamma_3 <- coef(full_period_summary_d)[4, 1]  # Third beta coefficient (gamma_3)
+    
+    # Standard errors
+    s_gamma_0 <- coef(full_period_summary_d)[1, 2]  # s(gamma_0)
+    s_gamma_1 <- coef(full_period_summary_d)[2, 2]  # s(gamma_1)
+    s_gamma_3 <- coef(full_period_summary_d)[4, 2]  # s(gamma_3)
+    
+    # t-statistics
+    t_gamma_0 <- coef(full_period_summary_d)[1, 3]  # t(gamma_0)
+    t_gamma_1 <- coef(full_period_summary_d)[2, 3]  # t(gamma_1)
+    t_gamma_3 <- coef(full_period_summary_d)[4, 3]  # t(gamma_3)
+    
+    # R-squared
+    r_squared <- full_period_summary_d$r.squared
+    
+    # Residuals and standard deviation of R-squared
+    residuals <- full_period_summary_d$residuals  # Get residuals from the model
+    s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of squared residuals
+    
+    # Calculate gamma_0 - R_f using the actual average risk-free rate
+    gamma_0_minus_rf <- gamma_0 - avg_rf
+    t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
+    
+    # Return the results for this period (for Panel D)
+    return(data.frame(
+      Period = label,
+      gamma_0 = gamma_0,
+      gamma_1 = gamma_1,
+      gamma_2 = gamma_2,
+      gamma_3 = gamma_3,
+      gamma_0_minus_rf = gamma_0_minus_rf,
+      s_gamma_0 = s_gamma_0,
+      s_gamma_1 = s_gamma_1,
+      s_gamma_3 = s_gamma_3,
+      t_gamma_0 = t_gamma_0,
+      t_gamma_1 = t_gamma_1,
+      t_gamma_3 = t_gamma_3,
+      t_gamma_0_minus_rf = t_gamma_0_minus_rf,
+      r_squared = r_squared,
+      s_r_squared = s_r_squared
+    ))
+  }
   
-  # Filter the risk-free rate for the corresponding period
-  risk_free_period <- risk_free %>%
-    filter(year_month >= format(start_date, "%Y-%m") & year_month <= format(end_date, "%Y-%m"))
-
-  # Compute the average risk-free rate over the period
-  avg_rf <- mean(risk_free_period$rf, na.rm = TRUE)
+  # Apply the function to each of the periods for Panel D
+  all_panel_d_results <- lapply(periods, function(period) {
+    compute_panel_d_metrics(period$start, period$end, period$label, risk_free)
+  })
   
-  # Apply the beta estimation as previously defined for Panel D
-  portfolio_full_period <- p_beta %>%
-    filter(date >= year(start_date) & date <= year(end_date)) %>%
-    filter(!is.na(beta))
+  # Combine the results into one table for Panel D
+  Panel_D <- do.call(rbind, all_panel_d_results)
   
-  # Ensure that the market return (fsi_rm) is available in the data by extracting the year from the date
-  portfolio_full_period <- portfolio_returns %>%
-    filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
-    inner_join(p_beta, by = c("portfolio", "p_yr" = "date")) %>%
-    left_join(fm_data_period %>% mutate(year = year(date)) %>% select(year, fsi_rm), by = c("p_yr" = "year")) %>%
-    filter(!is.na(beta), !is.na(portfolio_return))
-  
-  # Run the cross-sectional regression for Panel D with beta^2 and beta^3
-  full_period_model_d <- lm(portfolio_return ~ beta + I(beta^2) + I(beta^3), data = portfolio_full_period)
-  
-  # Extract the regression summary
-  full_period_summary_d <- summary(full_period_model_d)
-  
-  # Extract key metrics for Panel D
-  gamma_0 <- coef(full_period_summary_d)[1, 1]  # Intercept (gamma_0)
-  gamma_1 <- coef(full_period_summary_d)[2, 1]  # Beta coefficient (gamma_1)
-  gamma_2 <- coef(full_period_summary_d)[3, 1]  # Second beta coefficient (gamma_2)
-  gamma_3 <- coef(full_period_summary_d)[4, 1]  # Third beta coefficient (gamma_3)
-  
-  # Standard errors
-  s_gamma_0 <- coef(full_period_summary_d)[1, 2]  # s(gamma_0)
-  s_gamma_1 <- coef(full_period_summary_d)[2, 2]  # s(gamma_1)
-  s_gamma_3 <- coef(full_period_summary_d)[4, 2]  # s(gamma_3)
-  
-  # t-statistics
-  t_gamma_0 <- coef(full_period_summary_d)[1, 3]  # t(gamma_0)
-  t_gamma_1 <- coef(full_period_summary_d)[2, 3]  # t(gamma_1)
-  t_gamma_3 <- coef(full_period_summary_d)[4, 3]  # t(gamma_3)
-  
-  # R-squared
-  r_squared <- full_period_summary_d$r.squared
-  
-  # Residuals and standard deviation of R-squared
-  residuals <- full_period_summary_d$residuals  # Get residuals from the model
-  s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of squared residuals
-  
-  # Calculate gamma_0 - R_f using the actual average risk-free rate
-  gamma_0_minus_rf <- gamma_0 - avg_rf
-  t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
-  
-  # Return the results for this period (for Panel D)
-  return(data.frame(
-    Period = label,
-    gamma_0 = gamma_0,
-    gamma_1 = gamma_1,
-    gamma_2 = gamma_2,
-    gamma_3 = gamma_3,
-    gamma_0_minus_rf = gamma_0_minus_rf,
-    s_gamma_0 = s_gamma_0,
-    s_gamma_1 = s_gamma_1,
-    s_gamma_3 = s_gamma_3,
-    t_gamma_0 = t_gamma_0,
-    t_gamma_1 = t_gamma_1,
-    t_gamma_3 = t_gamma_3,
-    t_gamma_0_minus_rf = t_gamma_0_minus_rf,
-    r_squared = r_squared,
-    s_r_squared = s_r_squared
-  ))
-}
-
-# Apply the function to each of the periods for Panel D
-all_panel_d_results <- lapply(periods, function(period) {
-  compute_panel_d_metrics(period$start, period$end, period$label, risk_free)
-})
-
-# Combine the results into one table for Panel D
-Panel_D <- do.call(rbind, all_panel_d_results)
-
-# Display the final results for Panel D
-print(Panel_D)
+  # Display the final results for Panel D
+  print(Panel_D)
 
 ############################# initial code for table 4 #################
 
