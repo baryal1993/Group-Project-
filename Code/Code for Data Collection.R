@@ -108,39 +108,26 @@ periods <- tibble(
                        "2010-12-31", "2014-12-31", "2018-12-31", "2022-12-31", "2023-12-31")
 )
   
-# Function to estimate beta, with min_obs default set to 60 for estimation periods (60 months in 5 years)
-  estimate_beta <- function(data, min_obs = 60) {
-    # Ensure there are no missing values in ret and fsi_rm (market return)
-    data <- data |> filter(complete.cases(ret, fsi_rm))
-    
-    # If not enough observations, return NA
-    if (nrow(data) < min_obs) {
-      return(NA)
-    } else {
-      fit <- lm(ret ~ fsi_rm, data = data)
-      return(coef(fit)[2])  # Return the beta (slope)
-    }
-  }
-  # Proceed with portfolio formation and beta estimation with 48 observations for formation and 60 for estimation
   summary_table <- tibble(
     period = integer(),
     formation_period = character(),
     estimation_period = character(),
     testing_period = character(),
     total_securities = integer(),
-    securities_with_data = integer()
+    securities_with_data_formation = integer(),
+    securities_with_data_estimation = integer()
   )
-
-  # Set the iteration process
+  
   for (i in 1:nrow(periods)) {
+    print(paste("Processing period:", i))  # Debugging
     
-    # Set portfolio formation period, converting to Date
-    port_form_bdate <- as.Date(periods$formation_start[i])
-    port_form_edate <- as.Date(periods$formation_end[i])
+    # Set portfolio formation period
+    port_form_bdate <- periods$formation_start[i]
+    port_form_edate <- periods$formation_end[i]
     
-    # Set estimation period, converting to Date
-    est_start <- as.Date(periods$estimation_start[i])
-    est_end <- as.Date(periods$estimation_end[i])
+    # Set estimation period
+    est_start <- periods$estimation_start[i]
+    est_end <- periods$estimation_end[i]
     
     # Filter the data for the formation period
     formation_data <- fm_data |> 
@@ -152,19 +139,23 @@ periods <- tibble(
       filter(between(date, est_start, est_end)) |> 
       select(permno, date, ret, fsi_rm)
     
-    # Calculate the total number of securities
+    # Calculate the total number of securities in the formation period
     total_stocks <- formation_data |> 
       distinct(permno) |> 
       nrow()
     
-    # Apply the observation requirement:
-    # - First period must have at least 48 observations
-    # - Rest of the periods must have at least 60 observations
-    min_obs <- if (i == 1) 48 else 60
-    # Filter securities based on the number of required observations
+    # Calculate the number of securities that meet the formation period data requirement (48 observations)
     securities_with_data_formation <- formation_data |> 
       group_by(permno) |> 
-      filter(n() >= min_obs) |>  # Apply the observation requirement
+      filter(n() >= 48) |>  # Filter securities with at least 48 observations in formation period
+      ungroup() |> 
+      distinct(permno) |> 
+      nrow()
+    
+    # Calculate the number of securities that meet the estimation period data requirement (60 observations)
+    securities_with_data_estimation <- estimation_data |> 
+      group_by(permno) |> 
+      filter(n() >= 60) |>  # Filter securities with at least 60 observations in estimation period
       ungroup() |> 
       distinct(permno) |> 
       nrow()
@@ -174,13 +165,14 @@ periods <- tibble(
       period = i,
       formation_period = paste0(year(port_form_bdate), "-", year(port_form_edate)),
       estimation_period = paste0(year(est_start), "-", year(est_end)),
-      testing_period = paste0(year(as.Date(periods$testing_start[i])), "-", year(as.Date(periods$testing_end[i]))),
+      testing_period = paste0(year(periods$testing_start[i]), "-", year(periods$testing_end[i])),
       total_securities = total_stocks,
-      securities_with_data = securities_with_data_formation
+      securities_with_data_formation = securities_with_data_formation,
+      securities_with_data_estimation = securities_with_data_estimation
     )
   }
-  
- print(summary_table)
+  summary_table <- summary_table |> distinct()
+  print(summary_table)
  
 ### Table 1 created.   
 ### End of table 1.  
