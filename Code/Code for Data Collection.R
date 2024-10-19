@@ -1288,11 +1288,18 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
   # Display the final results for Panel C
   print(Panel_c)
 
-# Function to compute the required metrics for Panel D
-compute_panel_d_metrics <- function(start_date, end_date, label) {
+# Function to compute the required metrics for Panel D, including actual risk-free rate
+compute_panel_d_metrics <- function(start_date, end_date, label, risk_free) {
   # Filter the data for the specific period
   fm_data_period <- fm_data %>%
     filter(date >= start_date & date <= end_date)
+  
+  # Filter the risk-free rate for the corresponding period
+  risk_free_period <- risk_free %>%
+    filter(year_month >= format(start_date, "%Y-%m") & year_month <= format(end_date, "%Y-%m"))
+
+  # Compute the average risk-free rate over the period
+  avg_rf <- mean(risk_free_period$rf, na.rm = TRUE)
   
   # Apply the beta estimation as previously defined for Panel D
   portfolio_full_period <- p_beta %>%
@@ -1335,12 +1342,9 @@ compute_panel_d_metrics <- function(start_date, end_date, label) {
   residuals <- full_period_summary_d$residuals  # Get residuals from the model
   s_r_squared <- sd(residuals^2, na.rm = TRUE)  # Standard deviation of squared residuals
   
-  # Calculate gamma_0 - R_f
-  risk_free_rate <- 0.0013  # Example value, replace with actual
-  gamma_0_minus_rf <- gamma_0 - risk_free_rate
+  # Calculate gamma_0 - R_f using the actual average risk-free rate
+  gamma_0_minus_rf <- gamma_0 - avg_rf
   t_gamma_0_minus_rf <- gamma_0_minus_rf / s_gamma_0  # t(gamma_0 - R_f)
-  
-  
   
   # Return the results for this period (for Panel D)
   return(data.frame(
@@ -1362,15 +1366,16 @@ compute_panel_d_metrics <- function(start_date, end_date, label) {
   ))
 }
 
+# Apply the function to each of the periods for Panel D
 all_panel_d_results <- lapply(periods, function(period) {
-  compute_panel_d_metrics(period$start, period$end, period$label)
+  compute_panel_d_metrics(period$start, period$end, period$label, risk_free)
 })
 
 # Combine the results into one table for Panel D
-final_panel_d_results <- do.call(rbind, all_panel_d_results)
+Panel_D <- do.call(rbind, all_panel_d_results)
 
-# Display the final resultsh
-print(final_panel_d_results)
+# Display the final results for Panel D
+print(Panel_D)
 
 ############################# initial code for table 4 #################
 
