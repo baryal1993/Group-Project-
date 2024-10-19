@@ -1,6 +1,8 @@
-## Fama-Macbeth (1973) Replication Code
+## Fama-Macbeth (1973) Replication Code######
+# clearing environment 
+rm(list = ls())
 
-#Load necessaay libarary
+#Loading necessaay libarary
 library(RPostgres)
 library(tidyverse)
 library(RSQLite)
@@ -12,7 +14,7 @@ library(tseries)
 library(knitr)
 library(dplyr)
 library(lubridate)
-library(gt)
+library(gtable)
 library(kableExtra)
 
 # initiate conenction with WRDS
@@ -23,9 +25,7 @@ wrds <- dbConnect(Postgres(),
                   sslmode='require',
                   user='biaryal')
 
-
 ### Collect CRSP monthly stock return data ####
-
 msf_db <- tbl(wrds, sql("select * from crsp.msf"))
 
 start_date <- ymd("1926-01-01")
@@ -40,9 +40,8 @@ FM_ret <- msf_db |>
   ) |> collect()
 
 
-### Stock and Excchage Identifier ###
+### Stock and Excchage Identifier, selecting NYSE
 msenames_db <- tbl(wrds, sql("select * from crsp.msenames"))
-
 fm_stockids <- msenames_db |>
   select (permno, primexch)|> collect()|>unique()|> filter(primexch == 'N')
 
@@ -61,7 +60,6 @@ dbWriteTable(MAF900_data,
              "fm_ret",
              value = fm_data,
              overwrite = TRUE)
-
 
 
 
