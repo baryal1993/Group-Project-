@@ -1,6 +1,6 @@
 ---
-title: "Final Project"
-author: "Wajeeha/Bibek"
+title: "Fama Mcbeth Replication Assignment"
+author: "Wajeeha(PhD)/Bibek(MRes)"
 date: "2024-10-17"
 output: html_document
 ---
@@ -11,7 +11,6 @@ output: html_document
 library(knitr)
 library(kableExtra)
 library(dplyr)
-
 merged_portfolio_1934_38 <- read.csv("C:/test/MAF900/merged_portfolio_1934_38.csv")
 formatted_table_1934_38 <- data.frame(
   Statistic = c(
