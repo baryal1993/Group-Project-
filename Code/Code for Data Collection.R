@@ -17,7 +17,7 @@ library(lubridate)
 library(gtable)
 library(kableExtra)
 
-# initiate conenction with WRDS
+# Connect with WRDS
 wrds <- dbConnect(Postgres(),
                   host='wrds-pgdata.wharton.upenn.edu',
                   port=9737,
@@ -40,7 +40,7 @@ FM_ret <- msf_db |>
   ) |> collect()
 
 
-## Stock and Excchage Identifier, selecting NYSE
+## selecting NYSE, Stock returns
 msenames_db <- tbl(wrds, sql("select * from crsp.msenames"))
 fm_stockids <- msenames_db |>
   select (permno, primexch)|> collect()|>unique()|> filter(primexch == 'N')
@@ -62,7 +62,7 @@ dbWriteTable(MAF900_data,
              overwrite = TRUE)
 
 
-###  Create Fisher Index - for Rm ##
+###  Create Fisher Index
 Fs_Idx <- fm_data|> group_by(date)|> summarise(fsi_rm = mean(ret, na.rm = TRUE))
 
 write.csv(fm_data, "fm_data.csv")
@@ -80,7 +80,7 @@ Fs_Idx <- fm_data |>
 fm_data <- fm_data |> 
   left_join(Fs_Idx, by = "date")
 
-# Portfolio formation, estimation, and testing periods (it is similar to article for sample period and have extended until 2023 using the general trend, we have extedned tetsing period of eriod 9 to 19-67 to 19-70 as we have data now)
+# Portfolio formation, estimation, and testing periods 
 periods <- tibble(
   formation_start = c("1926-01-01", "1927-01-01", "1931-01-01", "1935-01-01", "1939-01-01", "1943-01-01", 
                       "1947-01-01", "1951-01-01", "1955-01-01", "1959-01-01", "1963-01-01", "1967-01-01", 
@@ -119,32 +119,29 @@ periods <- tibble(
   )
   
   for (i in 1:nrow(periods)) {
-    print(paste("Processing period:", i))  # Debugging
+    print(paste("Processing period:", i))  
     
-    # Set portfolio formation period
+    # Portfolio formation period
     port_form_bdate <- periods$formation_start[i]
     port_form_edate <- periods$formation_end[i]
     
-    # Set estimation period
+    # Estimation period
     est_start <- periods$estimation_start[i]
     est_end <- periods$estimation_end[i]
     
-    # Filter the data for the formation period
     formation_data <- fm_data |> 
       filter(between(date, port_form_bdate, port_form_edate)) |> 
       select(permno, date, ret, fsi_rm)
-    
-    # Filter the data for the estimation period
+  
     estimation_data <- fm_data |> 
       filter(between(date, est_start, est_end)) |> 
       select(permno, date, ret, fsi_rm)
     
-    # Calculate the total number of securities in the formation period
     total_stocks <- formation_data |> 
       distinct(permno) |> 
       nrow()
     
-    # Calculate the number of securities that meet the formation period data requirement (48 observations)
+    # Calculate the number of securities 
     securities_with_data_formation <- formation_data |> 
       group_by(permno) |> 
       filter(n() >= 48) |>  # Filter securities with at least 48 observations in formation period
@@ -152,15 +149,13 @@ periods <- tibble(
       distinct(permno) |> 
       nrow()
     
-    # Calculate the number of securities that meet the estimation period data requirement (60 observations)
     securities_with_data_estimation <- estimation_data |> 
       group_by(permno) |> 
       filter(n() >= 60) |>  # Filter securities with at least 60 observations in estimation period
       ungroup() |> 
       distinct(permno) |> 
       nrow()
-    
-    # Add the results to the summary table in the requested format
+  
     summary_table <- summary_table |> add_row(
       period = i,
       formation_period = paste0(year(port_form_bdate), "-", year(port_form_edate)),
@@ -179,7 +174,7 @@ periods <- tibble(
  
  
 ########Table 2 Portfolio for Estimation########
-# selecting period as per article 
+# selecting period 
 estimation_periods <- list(
   c("1934-01-01", "1938-12-31"),
   c("1942-01-01", "1946-12-31"),
@@ -189,18 +184,13 @@ estimation_periods <- list(
 start_date <- as.Date("1934-01-01")
 end_date <- as.Date("1938-12-31")
 
-# Filter the dataset for the 1942-1946 period
+#### 1942-1946 period
 fm_data_1934_38 <- fm_data %>%
   filter(date >= start_date & date <= end_date)
 
-# Check the filtered data
-print(head(fm_data_1934_38))
-
-# Ensure there are no missing values in returns or market returns
 fm_data_1934_38_clean <- fm_data_1934_38 %>%
   filter(!is.na(ret) & !is.na(fsi_rm))
 
-# Function to calculate all required statistics for each portfolio
 calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
   
   # Step 1: Calculate individual security statistics
@@ -217,17 +207,13 @@ calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
       # Extract R-squared of the regression
       r_squared <- summary(model)$r.squared
       
-      # Calculate fitted values and residuals manually
       fitted_vals <- fitted(model)
       residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
       
-      # Calculate standard deviation of residuals
       residual_sd <- sd(residuals_vals, na.rm = TRUE)
-      
-      # Calculate standard deviation of returns
+    
       return_sd <- sd(.$ret, na.rm = TRUE)
       
-      # Return all statistics for each security
       data.frame(beta = beta, beta_se = beta_se, r_squared = r_squared,
                  return_sd = return_sd, residual_sd = residual_sd)
     }) %>%
@@ -262,11 +248,6 @@ calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
 # Apply the function to calculate all statistics for the 1934-1938 period
 portfolio_estimation_1934_38 <- calculate_portfolio_statistics(fm_data_1934_38_clean)
 
-# Check the results
-print(portfolio_estimation_1934_38)
-
-
-# Ensure there are no missing values in returns or market returns
 fm_data_1934_38_clean <- fm_data_1934_38 %>%
   filter(!is.na(ret) & !is.na(fsi_rm))
 
@@ -280,19 +261,16 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
       # Run the regression for each security
       model <- lm(ret ~ fsi_rm, data = .)
       
-      # Calculate residuals manually
       fitted_vals <- fitted(model)
       residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
-      
-      # Calculate standard deviation of residuals for each security
+     
       residual_sd <- sd(residuals_vals, na.rm = TRUE)
-      
-      # Return residual SD for each security
+     
       data.frame(residual_sd = residual_sd)
     }) %>%
     ungroup()
   
-  # Step 2: Assign portfolios based on beta (already done in your main code)
+  # Step 2: Assign portfolios based on beta
   betas_and_residuals <- betas_and_residuals %>%
     arrange(residual_sd) %>%
     mutate(Portfolio = ntile(residual_sd, num_portfolios))  # Assign securities to portfolios
@@ -308,34 +286,21 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
 # Apply the function to calculate Mean s(εi) for the 1934-1938 period
 mean_residual_sd_1934_38 <- calculate_mean_residual_sd(fm_data_1934_38_clean)
 
-# Check the results
-print(mean_residual_sd_1934_38)
-
-
-# Merge the two data frames
 merged_portfolio_1934_38 <- portfolio_estimation_1934_38 %>%
   left_join(mean_residual_sd_1934_38, by = "Portfolio")
-
-# Check the results
-print(merged_portfolio_1934_38)
 
 # Specify the path to save the file
 file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
 
-# Save the dataset as a CSV file
 write.csv(merged_portfolio_1934_38, file_path, row.names = FALSE)
 
 #Portfolio for Estimation Period 1942-46
-
 start_date <- as.Date("1942-01-01")
 end_date <- as.Date("1946-12-31")
 
 # Filter the dataset for the 1942-1946 period
 fm_data_1942_46 <- fm_data %>%
   filter(date >= start_date & date <= end_date)
-
-# Check the filtered data
-print(head(fm_data_1942_46))
 
 fm_data_1942_46_clean <- fm_data_1942_46 %>%
   filter(!is.na(ret) & !is.na(fsi_rm))
@@ -357,17 +322,13 @@ calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
       # Extract R-squared of the regression
       r_squared <- summary(model)$r.squared
       
-      # Calculate fitted values and residuals manually
       fitted_vals <- fitted(model)
       residuals_vals <- .$ret - fitted_vals  # Actual - Fitted = Residuals
       
-      # Calculate standard deviation of residuals
       residual_sd <- sd(residuals_vals, na.rm = TRUE)
       
-      # Calculate standard deviation of returns
       return_sd <- sd(.$ret, na.rm = TRUE)
-      
-      # Return all statistics for each security
+
       data.frame(beta = beta, beta_se = beta_se, r_squared = r_squared,
                  return_sd = return_sd, residual_sd = residual_sd)
     }) %>%
@@ -401,9 +362,6 @@ calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
 # Apply the function to calculate all statistics for the 1942-1946 period
 portfolio_estimation_1942_46 <- calculate_portfolio_statistics(fm_data_1942_46_clean)
 
-# Check the results
-print(portfolio_estimation_1942_46)
-
 fm_data_1942_46_clean <- fm_data_1942_46 %>%
   filter(!is.na(ret) & !is.na(fsi_rm))
 
@@ -429,7 +387,7 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
     }) %>%
     ungroup()
   
-  # Step 2: Assign portfolios based on beta (already done in your main code)
+  # Step 2: Assign portfolios based on beta 
   betas_and_residuals <- betas_and_residuals %>%
     arrange(residual_sd) %>%
     mutate(Portfolio = ntile(residual_sd, num_portfolios))  # Assign securities to portfolios
@@ -441,18 +399,11 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
   
   return(portfolio_stats)
 }
-
 # Apply the function to calculate Mean s(εi) for the 1934-1938 period
 mean_residual_sd_1942_46 <- calculate_mean_residual_sd(fm_data_1942_46_clean)
 
-# Check the results
-print(mean_residual_sd_1942_46)
-
 merged_portfolio_1942_46 <- portfolio_estimation_1942_46 %>%
   left_join(mean_residual_sd_1942_46, by = "Portfolio")
-
-# Check the results
-print(merged_portfolio_1942_46)
 
 # Specify the path to save the file
 file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
@@ -460,21 +411,17 @@ file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Metho
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_1942_46, file_path, row.names = FALSE)
 
-#Portfolio for Estimation 1950-54
+########Portfolio for Estimation 1950-54
 
 start_date <- as.Date("1950-01-01")
 end_date <- as.Date("1954-12-31")
-
-# Filter the dataset for the 1950-1954 period
 fm_data_1950_54 <- fm_data %>%
   filter(date >= start_date & date <= end_date)
 
-# Check the filtered data
-print(head(fm_data_1950_54))
 fm_data_1950_54_clean <- fm_data_1950_54 %>%
   filter(!is.na(ret) & !is.na(fsi_rm))
 
-# Function to calculate portfolio statistics (same as before)
+# Function to calculate portfolio statistics
 calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
   
   # Step 1: Calculate individual security statistics
@@ -524,8 +471,6 @@ calculate_portfolio_statistics <- function(data, num_portfolios = 20) {
 # Apply the function to the data for 1950-54
 portfolio_estimation_1950_54 <- calculate_portfolio_statistics(fm_data_1950_54_clean)
 
-# View the results
-print(portfolio_estimation_1950_54)
 
 # Function to calculate portfolio statistics with Mean s(εi)
 calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
@@ -565,14 +510,8 @@ calculate_mean_residual_sd <- function(data, num_portfolios = 20) {
 # Apply the function to calculate Mean s(εi) for the 1934-1938 period
 mean_residual_sd_1950_54 <- calculate_mean_residual_sd(fm_data_1950_54_clean)
 
-# Check the results
-print(mean_residual_sd_1950_54)
-
 merged_portfolio_1950_54 <- portfolio_estimation_1950_54 %>%
   left_join(mean_residual_sd_1950_54, by = "Portfolio")
-
-# Check the results
-print(merged_portfolio_1950_54)
 
 # Specify the path to save the file
 file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Methods/Group Assignment/Group Project MAF900/Data/merged_portfolio_1934_38.csv"
@@ -581,11 +520,10 @@ file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Metho
 write.csv(merged_portfolio_1950_54, file_path, row.names = FALSE)
 
 
-#Portfolio for Estimation Period 1958-62
+########Portfolio for Estimation Period 1958-62
 start_date <- as.Date("1958-01-01")
 end_date <- as.Date("1962-12-31")
 
-# Filter the dataset for the 1958-1962 period
 fm_data_1958_62 <- fm_data %>%
   filter(date >= start_date & date <= end_date)
 
@@ -684,8 +622,6 @@ write.csv(merged_portfolio_1958_62, file_path, row.names = FALSE)
 ### extending to period having world financial crisis
 start_date <- as.Date("2006-01-01")
 end_date <- as.Date("2010-12-31")
-
-# Filter the dataset for the 2006-2010 period
 fm_data_2006_10 <- fm_data %>%
   filter(date >= start_date & date <= end_date)
 
@@ -781,12 +717,10 @@ file_path <- "/Users/bibekaryal/Desktop/MRes/second Semester/Advanced Data Metho
 # Save the dataset as a CSV file
 write.csv(merged_portfolio_2006_10, file_path, row.names = FALSE)
 
-
-## now adding period with COVID 2019 
+######## now adding period with COVID 2019 
 start_date <- as.Date("2018-01-01")
 end_date <- as.Date("2022-12-31")
 
-# Filter the dataset for the 2018-2022 period
 fm_data_2018_22 <- fm_data %>%
   filter(date >= start_date & date <= end_date)
 
@@ -966,17 +900,11 @@ p_beta <- fm_data_period %>%
   filter(date >= "1935") %>%
   drop_na()
 
-# View the beta estimation results
-print(head(p_beta))
-
 # Create portfolios based on the ranked betas
 p_beta <- p_beta %>%
   group_by(date) %>%
   mutate(portfolio = ntile(beta, 20)) %>%
   ungroup()
-
-# View portfolio assignment
-print(head(p_beta))
 
 port_bdate <- ymd("1935-01-01")
 port_edate <- ymd("1968-06-30")
@@ -989,18 +917,12 @@ for_port_ret <- fm_data_period %>%
          p_yr = yr - 1) %>%  # Create the previous year variable
   filter(!is.na(ret))   
 
-print(head(for_port_ret))
-
-
 # Calculate portfolio returns by averaging returns for each portfolio for each year
 portfolio_returns <- for_port_ret %>%
   inner_join(p_beta, by = c("permno", "yr" = "date")) %>%
   group_by(p_yr, portfolio) %>%
   summarise(portfolio_return = mean(ret, na.rm = TRUE)) %>%
   ungroup()
-
-# View the calculated portfolio returns
-print(head(portfolio_returns))
 
 # If beta is not numeric, convert it
 p_beta <- p_beta %>%
@@ -1109,14 +1031,13 @@ file_path <- "C:/test/MAF900/final_result_panel_A.csv"
 # Save the dataset as a CSV file
 write.csv(final_results_panel_A, file_path, row.names = FALSE)
 
-  # Function to compute the required metrics for each period for Panel B, including actual risk-free rate
+  # Function to compute the required metrics for each period for Panel B
   compute_panel_b_metrics <- function(start_date, end_date, label, risk_free) {
     # Filter the data for the specific period and make sure the rows are distinct
     fm_data_period <- fm_data %>%
       filter(date >= start_date & date <= end_date) %>%
       distinct(date, fsi_rm)  # Keep only distinct date and market return values
-    
-    # Filter the risk-free rate for the corresponding period
+  
     risk_free_period <- risk_free %>%
       filter(year_month >= format(start_date, "%Y-%m") & year_month <= format(end_date, "%Y-%m"))
     
@@ -1128,8 +1049,7 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
       filter(date >= year(start_date) & date <= year(end_date)) %>%
       filter(!is.na(beta)) %>%
       distinct(portfolio, date, .keep_all = TRUE)  # Ensure portfolio and date are unique
-    
-    # Ensure that the market return (fsi_rm) is available in the data by extracting the year from the date
+   
     portfolio_full_period <- portfolio_returns %>%
       filter(p_yr >= year(start_date) & p_yr <= year(end_date)) %>%
       distinct(portfolio, p_yr, .keep_all = TRUE) %>%  # Ensure uniqueness
@@ -1276,8 +1196,7 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
       s_r_squared = s_r_squared
     ))
   }
-  
-  # Apply the function to each of the periods for Panel C
+ 
   all_panel_c_results <- lapply(periods, function(period) {
     compute_panel_c_metrics(period$start, period$end, period$label, risk_free)
   })
@@ -1285,7 +1204,6 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
   # Combine the results into one table for Panel C
   Panel_c <- do.call(rbind, all_panel_c_results)
   
-  # Display the final results for Panel C
   print(Panel_c)
 
   # Function to compute the required metrics for Panel D, using actual risk-free rate from data
@@ -1301,8 +1219,7 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
     
     # Compute the average risk-free rate over the period
     avg_rf <- mean(risk_free_period$rf, na.rm = TRUE)
-    
-    # Ensure unique p_beta data for the period
+   
     p_beta_period <- p_beta %>%
       filter(date >= year(start_date) & date <= year(end_date)) %>%
       distinct(portfolio, date, .keep_all = TRUE)  # Ensure unique portfolios and dates
@@ -1315,8 +1232,7 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
       left_join(fm_data_period %>% mutate(year = year(date)) %>% distinct(year, fsi_rm), 
                 by = c("p_yr" = "year")) %>%
       filter(!is.na(beta), !is.na(portfolio_return))
-    
-    # Check for duplicates to avoid memory issues (for debugging purposes, can be commented out)
+  
     # print(portfolio_full_period %>% group_by(portfolio, p_yr) %>% summarise(n = n()) %>% filter(n > 1))
     
     # Run the cross-sectional regression for Panel D with beta^2 and beta^3
@@ -1379,8 +1295,7 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
   
   # Combine the results into one table for Panel D
   Panel_D <- do.call(rbind, all_panel_d_results)
-  
-  # Display the final results for Panel D
+ 
   print(Panel_D)
 
 
@@ -1475,7 +1390,6 @@ full_data_with_rf <- full_data_with_rf |>
 
 # View the merged data
 head(full_data_with_rf)
-
 
 
 library(lubridate)
