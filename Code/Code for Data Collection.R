@@ -1382,3 +1382,141 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
   
   # Display the final results for Panel D
   print(Panel_D)
+
+
+
+#### Initial code for table 4 
+
+# Define the periods
+periods <- list(
+  list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-06/68"),
+  list(start = ymd("1935-01-01"), end = ymd("1945-12-31"), label = "1935-45"),
+  list(start = ymd("1946-01-01"), end = ymd("1955-12-31"), label = "1946-55"),
+  list(start = ymd("1956-01-01"), end = ymd("1968-06-30"), label = "1956-68"),
+  list(start = ymd("1935-01-01"), end = ymd("1940-12-31"), label = "1935-40"),
+  list(start = ymd("1941-01-01"), end = ymd("1945-12-31"), label = "1941-45"),
+  list(start = ymd("1946-01-01"), end = ymd("1950-12-31"), label = "1946-50"),
+  list(start = ymd("1951-01-01"), end = ymd("1955-12-31"), label = "1951-55"),
+  list(start = ymd("1956-01-01"), end = ymd("1960-12-31"), label = "1956-60"),
+  list(start = ymd("1961-01-01"), end = ymd("1968-06-30"), label = "1961-6/68")
+)
+
+
+
+# Function to calculate portfolio-level data for a given period
+create_portfolio_data <- function(start_date, end_date, period_label) {
+  # Step 1: Filter data for the given period
+  port_data_period <- full_data_with_rf |>
+    filter(date >= start_date & date <= end_date)
+  
+  # Step 2: Ensure year_month is in the correct format for merging with risk-free rate
+  port_data_period$year_month <- format(port_data_period$date, "%Y-%m")
+  
+  # Step 3: Merge with risk-free rate data from 'full_data_with_rf' which already has 'rf' after join
+  merged_data <- port_data_period |> 
+    mutate(rm_minus_rf = ret - rf,  # Market return minus risk-free rate (from merged data)
+           period_label = period_label)  # Add period label for grouping
+  
+  return(merged_data)
+}
+
+# Loop through each period to create the data for all periods
+stacked_data_all_periods <- lapply(periods, function(period) {
+  create_portfolio_data(period$start, period$end, period$label)
+})
+
+# Combine the data for all periods into one dataset
+stacked_data <- bind_rows(stacked_data_all_periods)
+
+# View the combined dataset
+View(stacked_data)
+
+# Estimation of Betas for Portfolio Formation
+crsp_pf_period_all <- full_data_with_rf |>
+  mutate(date = as.Date(date)) |>
+  mutate(month = floor_date(date, "month"), year = year(date)) |>
+  na.omit() |>
+  group_by(month) |>
+  mutate(mkt = mean(ret)) |> 
+  filter(date >= '1927-01-01' & date <= '1968-06-30')
+
+
+
+# Define the CAPM estimation function
+estimate_capm <- function(data, min_obs) {
+  if (nrow(data) < min_obs) {
+    beta <- as.numeric(NA)
+    sdres <- as.numeric(NA)
+  } else {
+    fit <- lm(ret ~ mkt, data = data)
+    beta <- as.numeric(coef(fit)[2])
+    sdres <- as.numeric(sd(residuals(fit), na.rm = TRUE))
+  }
+  return(tibble(beta, sdres))
+}
+
+# Apply beta estimation to portfolio formation period
+beta_pf_all_periods <- crsp_pf_period_all |>
+  group_by(permno) |>
+  mutate(pf = estimate_capm(pick(everything()), min_obs = 48)) |>
+  ungroup() |>
+  drop_na() |>
+  select(permno, pf) |>
+  unique() |>
+  arrange(pf$beta) |>
+  mutate(port = as.numeric(cut_number(pf$beta, 20))) |>
+  drop_na()
+
+
+# Rolling CAPM Estimation (min_obs = 60)
+roll_capm_estimation <- function(data, months, min_obs) {
+  data <- data |> arrange(month)
+  ie <- slide_period_vec(
+    .x = data,
+    .i = data$month,
+    .period = "month",
+    .before = Inf,
+    .f = ~ estimate_capm(., min_obs), 
+    .complete = TRUE
+  )
+  return(tibble(estimation_end = unique(data$month), ie))
+}
+
+# rolling CAPM results by merging with beta_pf_all_periods
+beta_ie_all_periods <- crsp_pf_period_all |>
+  group_by(permno) |>
+  mutate(beta_ie = roll_capm_estimation(pick(everything()), months = 60, min_obs = 60)) |>
+  ungroup() |>
+  select(permno, beta_ie, date, ret, mkt) |>
+  drop_na() |>
+  group_by(permno) |>
+  mutate(date = ymd(beta_ie$estimation_end)) |>
+  mutate(date = ceiling_date(as.Date(date, format = "%Y-%m-%d"), "month") - days(1)) |>
+  unique()
+
+# Merge with 'beta_pf_all_periods' to bring in the 'port' column
+beta_ie_all_periods_with_port <- beta_ie_all_periods |>
+  inner_join(beta_pf_all_periods |> select(permno, port), by = "permno")
+
+# Add beta square and standard deviation of residuals (if not already present)
+beta_ie_all_periods_with_port <- beta_ie_all_periods_with_port |>
+  mutate(beta_sq = beta_ie$beta^2,  # Squared beta
+         sdres = beta_ie$sdres)  # Residual standard deviation
+
+
+# create 'beta' and 'beta_sq' 
+beta_ie_all_periods_with_port <- beta_ie_all_periods_with_port |>
+  mutate(beta = beta_ie$beta,  # Extract beta
+         beta_sq = beta^2)     # Calculate beta_sq
+
+# Summarise Portfolio Data
+port_data_all_periods <- beta_ie_all_periods_with_port |>
+  group_by(date, port) |>
+  summarise(across(
+    .cols = c(ret, mkt, beta, beta_sq, sdres),
+    .fns = list(Port_Mean = mean, Port_Sd = sd),
+    na.rm = TRUE, 
+    .names = "{col}_{fn}"
+  )) |>
+  ungroup()
+
