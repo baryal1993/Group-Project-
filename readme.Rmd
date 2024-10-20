@@ -5,11 +5,16 @@ We aim to replicate the empirical methodology of Fama and MacBeth 1973, focusing
 
 Through this replication, we aim to provide both a confirmation of the original study’s findings and insights into the current relevance of the CAPM in explaining the cross-section of stock returns. Additionally, we explore the robustness of these results across various sub-periods contributing to the ongoing debate about the effectiveness of CAPM in modern financial markets.
 
-
 The responsibility division include as below: 
+Project Creation Bibek
+Data Collection Bibek 
+Data Preparation Wajeehaa/Bibek
+Running regression Bibek and Wajeeha
+Report writing Wajeeha and Bibek
+
+The responsibility Update include as below: 
 Project Creation Bibek: completed 
 Data Collection Wajehaa: completed 
 Data Preparation Bibek and wajeeha: completed 
-Running regression Bibek and Wajeeha: initial coding completed upto table 3  
-data analysis Wajeeha and Bibek: ongoing 
-report writing Wajeeha and Bibek: ongoing 
+Running regression Bibek and Wajeeha: Completed
+Report writing Wajeeha and Bibek: Completed
