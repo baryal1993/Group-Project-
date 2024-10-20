@@ -709,3 +709,238 @@ kable(combined_table_with_headers, format = "html", col.names = c("Statistic", p
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
   row_spec(c(1, 9, 17, 25, 33, 41), bold = TRUE, background = "#D3D3D3", align = "c")
 ```
+
+############### Table 3 #################
+
+```{r, table, echo=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(gt)
+library(tidyr)
+Panel_A <- read.csv("C:/test/MAF900/Panel_A.csv")
+Panel_A[] <- lapply(Panel_A, function(x) if(is.numeric(x)) round(x, 4) else x)
+
+# Insert a row for "Panel A" aligned to the left side
+panel_a_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_A)))  # Create a row with the same number of columns
+colnames(panel_a_row) <- colnames(Panel_A)  # Ensure that column names match
+panel_a_row[1, 1] <- "Panel A"  # Add "Panel A" text in the first column
+
+# Combine Panel A data with the inserted "Panel A" row
+Panel_A <- rbind(panel_a_row, Panel_A)
+
+# Create a table with HTML and LaTeX output for Panel A
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_A, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    add_header_above(c(" " = 1, "Summary Result for the Regression" = 10)) %>%  # Header for Panel A
+    add_header_above(c(" " = 1, "Table 3" = 10), bold = TRUE) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%  # Removed 'striped'
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel A" to the left
+    row_spec(2:nrow(Panel_A), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_A, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_2)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    add_header_above(c(" " = 1, "Summary Result for the Regression" = 10)) %>%
+    add_header_above(c(" " = 1, "Table 3" = 10), bold = TRUE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel A" to the left
+    row_spec(2:nrow(Panel_A), bold = FALSE)
+}
+Panel_B <- read.csv("C:/test/MAF900/Panel_B.csv")
+Panel_B[] <- lapply(Panel_B, function(x) if(is.numeric(x)) round(x, 5) else x)
+
+# Insert a row for "Panel B" aligned to the left side
+panel_b_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_B)))  # Create a row with the same number of columns
+colnames(panel_b_row) <- colnames(Panel_B)  # Ensure that column names match
+panel_b_row[1, 1] <- "Panel B"  # Add "Panel B" text in the first column
+
+# Combine Panel B data with the inserted "Panel B" row
+Panel_B <- rbind(panel_b_row, Panel_B)
+
+# Create a table with HTML and LaTeX output for Panel B
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_B, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>2</sub>", 
+                      "&gamma;<sub>3</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "s(&gamma;<sub>2</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel B" to the left
+    row_spec(2:nrow(Panel_B), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_B, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_2$", 
+          "$\\gamma_3$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_2)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel B" to the left
+    row_spec(2:nrow(Panel_B), bold = FALSE)
+}
+
+Panel_c <- read.csv("C:/test/MAF900/Panel_C.csv")
+Panel_C[] <- lapply(Panel_C, function(x) if(is.numeric(x)) round(x, 4) else x)
+
+# Insert a row for "Panel C" aligned to the left side
+panel_c_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_C)))  # Create a row with the same number of columns
+colnames(panel_c_row) <- colnames(Panel_C)  # Ensure that column names match
+panel_c_row[1, 1] <- "Panel C"  # Add "Panel C" text in the first column
+
+# Combine Panel C data with the inserted "Panel C" row
+Panel_C <- rbind(panel_c_row, Panel_C)
+
+# Create a table with HTML and LaTeX output for Panel C
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_C, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>2</sub>", 
+                      "&gamma;<sub>3</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "s(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel C" to the left
+    row_spec(2:nrow(Panel_C), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_C, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_2$", 
+          "$\\gamma_3$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_3)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_3)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel C" to the left
+    row_spec(2:nrow(Panel_C), bold = FALSE)
+}
+
+Panel_D <- read.csv("C:/test/MAF900/Panel_D.csv")
+Panel_D[] <- lapply(Panel_D, function(x) if(is.numeric(x)) round(x, 4) else x)
+
+# Insert a row for "Panel D" aligned to the left side
+panel_d_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_D)))  # Create a row with the same number of columns
+colnames(panel_d_row) <- colnames(Panel_D)  # Ensure that column names match
+panel_d_row[1, 1] <- "Panel D"  # Add "Panel D" text in the first column
+
+# Combine Panel D data with the inserted "Panel D" row
+Panel_D <- rbind(panel_d_row, Panel_D)
+
+# Create a table with HTML and LaTeX output for Panel D
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_D, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>2</sub>", 
+                      "&gamma;<sub>3</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "s(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel D" to the left
+    row_spec(2:nrow(Panel_D), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_D, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_2$", 
+          "$\\gamma_3$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_3)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_3)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel D" to the left
+    row_spec(2:nrow(Panel_D), bold = FALSE)
+}
+```
