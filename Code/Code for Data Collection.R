@@ -1385,14 +1385,104 @@ write.csv(final_results_panel_A, file_path, row.names = FALSE)
 
 
 
-#### Initial code for table 4 
+#### Complete  code for table 4 part a
 
-# Define the periods
-periods <- list(
-  list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-06/68"),
-  list(start = ymd("1935-01-01"), end = ymd("1945-12-31"), label = "1935-45"),
-  list(start = ymd("1946-01-01"), end = ymd("1955-12-31"), label = "1946-55"),
-  list(start = ymd("1956-01-01"), end = ymd("1968-06-30"), label = "1956-68"),
+rm(list=ls())
+
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(RPostgres)
+library(RSQLite)
+library(dbplyr)
+library(furrr)
+library(slider)
+library(purrr)
+library(ggplot2)
+library(slider)
+#.x = data input
+#~.x = function parsed on data x
+
+wrds <- dbConnect(Postgres(),
+                  host='wrds-pgdata.wharton.upenn.edu',
+                  port=9737,
+                  dbname='wrds',
+                  sslmode='require',
+                  user='biaryal')
+
+crsp_query<- tbl(wrds, sql("select * from crsp.msf")) |>
+  filter(date >= '1926-08-01' & date <= '1968-06-30') |>
+  select(permno, date, ret) |> 
+  collect()
+
+crsp_query_msenames<- tbl(wrds, sql("select * from crsp.msenames")) |>
+  select(permno, primexch, shrcd) |> collect() |> unique()
+
+full_data <- crsp_query |> 
+  left_join(
+    crsp_query_msenames, 
+    by = c('permno'), keep=FALSE
+  ) |> 
+  filter(primexch == 'N')|>
+  filter(shrcd == 10)
+
+full_data$year_month <- format(full_data$date, "%Y-%m")
+
+###  Create Fisher Index - for Rm ##
+Fs_Idx <- full_data|> group_by(date)|> summarise(fsi_rm = mean(ret, na.rm = TRUE))
+
+## Combine Stock return and market return i.e. fisher index return ##
+
+full_data <- full_data |>select(permno,date,ret)|>inner_join(Fs_Idx, by = c("date"))|> arrange(permno,date)
+
+
+#SECTION A - RISK FREE RATE FROM FAMA FRENCH
+#####################################
+
+# Download and prepare Fama-French 3-factor data
+temp <- tempfile(fileext = ".zip")
+download.file("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip", temp)
+temp1 <- unzip(temp, exdir = ".")
+
+ff_3factors_monthly <- read.csv(temp1, skip = 5, header = F) 
+names(ff_3factors_monthly) <- c('dt', 'rmrf', 'smb', 'hml', 'rf')
+
+ff_3factors_mon <- ff_3factors_monthly |>
+  filter(nchar(dt) == 6) |>
+  mutate(yr = str_sub(dt, 1, 4), mon = str_sub(dt, -2, -1),  
+         date = make_date(year = yr, month = mon, day = 01),
+         mkt_excess = as.numeric(rmrf), smb = as.numeric(smb),
+         hml = as.numeric(hml), rf = as.numeric(rf)) |> 
+  select(c('date', 'mkt_excess', 'smb', 'hml', 'rf'))
+
+# Convert dates to appropriate format
+ff_3factors_mon$date <- as.Date(ff_3factors_mon$date)
+ff_3factors_mon$year_month <- format(ff_3factors_mon$date, "%Y-%m")
+full_data$year_month <- full_data$date
+
+
+# Merge CRSP data with Fama-French factors on 'year_month'
+
+# Perform the join first and then divide rf by 100
+full_data_with_rf <- full_data |> 
+  left_join(ff_3factors_mon |> select(rf, year_month), by = 'year_month') |>
+  mutate(rf = rf / 100)  # Convert rf to percentage by dividing by 100
+
+
+# Calculate excess returns (stock returns minus risk-free rate)
+full_data_with_rf <- full_data_with_rf |>
+  mutate(rm_minus_rf = ret - rf)   # Excess return over the risk-free rate
+
+# View the merged data
+head(full_data_with_rf)
+
+
+
+library(lubridate)
+library(dplyr)
+
+# Define short periods (non-overlapping)
+short_periods <- list(
   list(start = ymd("1935-01-01"), end = ymd("1940-12-31"), label = "1935-40"),
   list(start = ymd("1941-01-01"), end = ymd("1945-12-31"), label = "1941-45"),
   list(start = ymd("1946-01-01"), end = ymd("1950-12-31"), label = "1946-50"),
@@ -1401,122 +1491,324 @@ periods <- list(
   list(start = ymd("1961-01-01"), end = ymd("1968-06-30"), label = "1961-6/68")
 )
 
+# Define long periods (overlapping), leaving 1935-6/68 to be assigned last
+long_periods <- list(
+  list(start = ymd("1935-01-01"), end = ymd("1945-12-31"), label = "1935-45"),
+  list(start = ymd("1946-01-01"), end = ymd("1955-12-31"), label = "1946-55"),
+  list(start = ymd("1956-01-01"), end = ymd("1968-06-30"), label = "1956-6/68")
+)
 
-
-# Function to calculate portfolio-level data for a given period
-create_portfolio_data <- function(start_date, end_date, period_label) {
-  # Step 1: Filter data for the given period
-  port_data_period <- full_data_with_rf |>
-    filter(date >= start_date & date <= end_date)
+# Function to assign periods based on the defined time ranges
+assign_period <- function(data, periods, period_column) {
+  data[[period_column]] <- NA  # Create a placeholder column for the new period labels
   
-  # Step 2: Ensure year_month is in the correct format for merging with risk-free rate
-  port_data_period$year_month <- format(port_data_period$date, "%Y-%m")
-  
-  # Step 3: Merge with risk-free rate data from 'full_data_with_rf' which already has 'rf' after join
-  merged_data <- port_data_period |> 
-    mutate(rm_minus_rf = ret - rf,  # Market return minus risk-free rate (from merged data)
-           period_label = period_label)  # Add period label for grouping
-  
-  return(merged_data)
-}
-
-# Loop through each period to create the data for all periods
-stacked_data_all_periods <- lapply(periods, function(period) {
-  create_portfolio_data(period$start, period$end, period$label)
-})
-
-# Combine the data for all periods into one dataset
-stacked_data <- bind_rows(stacked_data_all_periods)
-
-# View the combined dataset
-View(stacked_data)
-
-# Estimation of Betas for Portfolio Formation
-crsp_pf_period_all <- full_data_with_rf |>
-  mutate(date = as.Date(date)) |>
-  mutate(month = floor_date(date, "month"), year = year(date)) |>
-  na.omit() |>
-  group_by(month) |>
-  mutate(mkt = mean(ret)) |> 
-  filter(date >= '1927-01-01' & date <= '1968-06-30')
-
-
-
-# Define the CAPM estimation function
-estimate_capm <- function(data, min_obs) {
-  if (nrow(data) < min_obs) {
-    beta <- as.numeric(NA)
-    sdres <- as.numeric(NA)
-  } else {
-    fit <- lm(ret ~ mkt, data = data)
-    beta <- as.numeric(coef(fit)[2])
-    sdres <- as.numeric(sd(residuals(fit), na.rm = TRUE))
+  for (period in periods) {
+    # Assign periods where the dates fall into the defined range
+    data[[period_column]][data$date >= period$start & data$date <= period$end] <- period$label
   }
-  return(tibble(beta, sdres))
+  
+  return(data)
 }
 
-# Apply beta estimation to portfolio formation period
-beta_pf_all_periods <- crsp_pf_period_all |>
-  group_by(permno) |>
-  mutate(pf = estimate_capm(pick(everything()), min_obs = 48)) |>
-  ungroup() |>
-  drop_na() |>
-  select(permno, pf) |>
-  unique() |>
-  arrange(pf$beta) |>
-  mutate(port = as.numeric(cut_number(pf$beta, 20))) |>
-  drop_na()
+
+#  `date` column is in 'YYYY-MM' format, converting it to a proper Date object
+full_data_with_rf$date <- as.Date(paste0(full_data_with_rf$date, "-01"), format="%Y-%m-%d")
 
 
-# Rolling CAPM Estimation (min_obs = 60)
-roll_capm_estimation <- function(data, months, min_obs) {
-  data <- data |> arrange(month)
-  ie <- slide_period_vec(
-    .x = data,
-    .i = data$month,
-    .period = "month",
-    .before = Inf,
-    .f = ~ estimate_capm(., min_obs), 
-    .complete = TRUE
-  )
-  return(tibble(estimation_end = unique(data$month), ie))
+# Apply the period assignment function for both short and long periods, ensuring the "1935-6/68" is assigned last
+full_data_with_rf <- assign_period(full_data_with_rf, short_periods, "short_period")
+full_data_with_rf <- assign_period(full_data_with_rf, long_periods, "long_period")
+
+# Now reassign the full long period 1935-6/68 at the end to ensure it captures all data from 1935-06/68
+full_data_with_rf <- assign_period(full_data_with_rf, list(list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-6/68")), "full_period")
+
+# Check the results
+table(full_data_with_rf$short_period)  # Counts for short periods
+table(full_data_with_rf$long_period)   # Counts for long periods, including "1935-6/68"
+table(full_data_with_rf$full_period)
+
+# Apply rolling window beta estimation to each stock
+# Beta estimation using market excess return, ensuring minimum observations and handling NA values
+#Calculate market excess return (mkt_excess)
+full_data_with_rf <- full_data_with_rf |>
+  mutate(mkt_excess = fsi_rm - rf)  # Create the market excess return
+
+estimate_beta <- function(data, min_obs = 60) {
+  # Remove rows with NA values in ret or mkt_excess
+  data <- data[complete.cases(data$ret, data$mkt_excess), ]
+  
+  # Require a minimum number of non-NA observations
+  if (nrow(data) < min_obs) {
+    return(NA)  # Not enough data to estimate beta
+  } else {
+    # Regress stock return on market excess return to get beta
+    fit <- lm(ret ~ mkt_excess, data = data)
+    return(coef(fit)[2])  # Return the beta estimate (slope coefficient)
+  }
 }
 
-# rolling CAPM results by merging with beta_pf_all_periods
-beta_ie_all_periods <- crsp_pf_period_all |>
+
+# Apply the sliding window beta calculation
+full_data_with_rf <- full_data_with_rf |>
   group_by(permno) |>
-  mutate(beta_ie = roll_capm_estimation(pick(everything()), months = 60, min_obs = 60)) |>
-  ungroup() |>
-  select(permno, beta_ie, date, ret, mkt) |>
-  drop_na() |>
-  group_by(permno) |>
-  mutate(date = ymd(beta_ie$estimation_end)) |>
-  mutate(date = ceiling_date(as.Date(date, format = "%Y-%m-%d"), "month") - days(1)) |>
-  unique()
-
-# Merge with 'beta_pf_all_periods' to bring in the 'port' column
-beta_ie_all_periods_with_port <- beta_ie_all_periods |>
-  inner_join(beta_pf_all_periods |> select(permno, port), by = "permno")
-
-# Add beta square and standard deviation of residuals (if not already present)
-beta_ie_all_periods_with_port <- beta_ie_all_periods_with_port |>
-  mutate(beta_sq = beta_ie$beta^2,  # Squared beta
-         sdres = beta_ie$sdres)  # Residual standard deviation
-
-
-# create 'beta' and 'beta_sq' 
-beta_ie_all_periods_with_port <- beta_ie_all_periods_with_port |>
-  mutate(beta = beta_ie$beta,  # Extract beta
-         beta_sq = beta^2)     # Calculate beta_sq
-
-# Summarise Portfolio Data
-port_data_all_periods <- beta_ie_all_periods_with_port |>
-  group_by(date, port) |>
-  summarise(across(
-    .cols = c(ret, mkt, beta, beta_sq, sdres),
-    .fns = list(Port_Mean = mean, Port_Sd = sd),
-    na.rm = TRUE, 
-    .names = "{col}_{fn}"
-  )) |>
+  mutate(beta = slider::slide_dbl(.x = cur_data(), 
+                                  .f = estimate_beta, 
+                                  .before = 59,  # Use the past 60 months
+                                  min_obs = 60)) |>  # Require at least 60 months of data
   ungroup()
+
+
+
+# Assign portfolios based on beta
+# Here we assign securities into 20 portfolios based on their beta
+
+# Keep only rows with no missing values in the key columns (ret, mkt_excess, rf)
+full_data_with_rf <- full_data_with_rf[complete.cases(full_data_with_rf), ]
+
+full_data_with_rf <- full_data_with_rf |>
+  group_by(short_period, year_month) |>
+  mutate(portfolio = ntile(beta, 20)) |>  # Divide into 20 portfolios based on beta
+  ungroup()
+
+# View portfolio assignments
+head(full_data_with_rf)
+
+
+# Calculate portfolio returns and standard deviations for each portfolio in each period
+summary_portfolios <- full_data_with_rf |>
+  group_by(year_month, portfolio) |>
+  summarise(
+    port_ret = mean(rm_minus_rf, na.rm = TRUE),  # Portfolio mean return
+    port_ret_sd = sd(rm_minus_rf, na.rm = TRUE)  # Portfolio return standard deviation
+  ) |>
+  ungroup()
+
+# View the portfolio summaries
+head(summary_portfolios)
+
+# Function to estimate gamma coefficients using cross-sectional regression
+estimate_gamma <- function(data) {
+  fit <- lm(port_ret ~ beta + I(beta^2) + port_ret_sd, data = data)  # Regress portfolio returns on beta
+  return(tibble(
+    gamma0 = coef(fit)[1], 
+    gamma1 = coef(fit)[2], 
+    gamma2 = coef(fit)[3], 
+    gamma3 = coef(fit)[4], 
+    rsquare = summary(fit)$r.squared
+  ))
+}
+
+# Merge `summary_portfolios` with the original data to include `beta` and other variables
+summary_portfolios <- summary_portfolios |>
+  left_join(full_data_with_rf |> select(year_month, portfolio, beta), by = c("year_month", "portfolio"))
+
+# Check if `beta` is present and properly merged
+head(summary_portfolios)
+
+# Now apply the gamma estimation for each year_month
+gamma_results <- summary_portfolios |>
+  group_by(year_month) |>
+  summarise(gamma_values = estimate_gamma(cur_data())) |>
+  ungroup()
+
+# View the gamma estimates
+gamma_results
+
+
+# Unnest the gamma_values tibble column into separate columns
+gamma_results <- gamma_results |>
+  unnest_wider(gamma_values)
+
+# View the updated gamma_results with separate columns for gamma0, gamma1, etc.
+head(gamma_results)
+
+# Now calculate the T-statistics for each gamma coefficient
+gamma_tstat <- gamma_results |>
+  mutate(
+    gamma0_tstat = gamma0 / sd(gamma0, na.rm = TRUE),  # T-stat for gamma0
+    gamma1_tstat = gamma1 / sd(gamma1, na.rm = TRUE),  # T-stat for gamma1
+    gamma2_tstat = gamma2 / sd(gamma2, na.rm = TRUE),  # T-stat for gamma2
+    gamma3_tstat = gamma3 / sd(gamma3, na.rm = TRUE)   # T-stat for gamma3
+  )
+
+# View the gamma results with T-statistics
+gamma_tstat
+
+
+# Ensure that portfolio returns (port_ret) are included in the gamma_results dataset
+gamma_results <- gamma_results |>
+  left_join(summary_portfolios |> select(year_month, portfolio, port_ret), by = c("year_month"))
+
+# Now calculate first-order autocorrelation for portfolio returns and gamma coefficients
+gamma_results <- gamma_results |>
+  group_by(portfolio) |>
+  mutate(
+    return_autocorr = cor(port_ret, lag(port_ret), use = "complete.obs"),  # Autocorrelation for returns
+    gamma1_autocorr = cor(gamma1, lag(gamma1), use = "complete.obs"),      # Autocorrelation for gamma1
+    gamma2_autocorr = cor(gamma2, lag(gamma2), use = "complete.obs"),      # Autocorrelation for gamma2
+    gamma3_autocorr = cor(gamma3, lag(gamma3), use = "complete.obs")       # Autocorrelation for gamma3
+  ) |>
+  ungroup()
+
+# View the updated results with autocorrelations
+head(gamma_results)
+
+# Function to calculate the required statistics for each period type
+
+
+###########
+# Aggregate full_data_with_rf across permnos for each year_month
+full_data_with_rf_aggregated <- full_data_with_rf |>
+  group_by(year_month) |>
+  summarise(
+    port_ret = mean(port_ret, na.rm = TRUE),        # Average portfolio return
+    rm_minus_rf = mean(rm_minus_rf, na.rm = TRUE),  # Average market return minus risk-free rate
+    rf = mean(rf, na.rm = TRUE)                     # Average risk-free rate
+    # Add any other necessary aggregations
+  ) |>
+  ungroup()
+
+# Now check if each year_month is unique
+n_distinct(full_data_with_rf_aggregated$year_month) == nrow(full_data_with_rf_aggregated)
+
+# Join the gamma_results with the aggregated full_data_with_rf
+full_data_with_rf <- full_data_with_rf_aggregated |>
+  left_join(gamma_results, by = "year_month")
+
+# Check the result
+head(full_data_with_rf)
+
+# Check if the period columns are present in the dataset
+colnames(full_data_with_rf)
+
+# Convert 'year_month' to a proper date format using the first day of the month
+full_data_with_rf <- full_data_with_rf |>
+  mutate(date = ymd(paste0(year_month, "-01")))
+
+# Reassign short, long, and full periods
+full_data_with_rf <- assign_period(full_data_with_rf, short_periods, "short_period")
+full_data_with_rf <- assign_period(full_data_with_rf, long_periods, "long_period")
+
+# Assign the full period (1935-6/68)
+full_data_with_rf <- assign_period(full_data_with_rf, list(list(start = ymd("1935-01-01"), end = ymd("1968-06-30"), label = "1935-6/68")), "full_period")
+
+
+# Check if the periods have been correctly assigned
+table(full_data_with_rf$short_period)
+table(full_data_with_rf$long_period)
+table(full_data_with_rf$full_period)
+
+
+colnames(full_data_with_rf)
+
+
+
+
+###
+
+# Calculate statistics for long periods
+table_4_long_periods <- full_data_with_rf |>
+  group_by(long_period) |>
+  summarise(
+    Rm_mean = mean(port_ret.x, na.rm = TRUE),        # Mean of market return
+    Rm_minus_Rf_mean = mean(rm_minus_rf, na.rm = TRUE),  # Mean of market return minus risk-free rate
+    gamma1_mean = mean(gamma1, na.rm = TRUE),      # Mean of gamma1
+    gamma0_mean = mean(gamma0, na.rm = TRUE),      # Mean of gamma0
+    Rf_mean = mean(rf, na.rm = TRUE),             # Mean of risk-free rate
+    Rm_sd = sd(port_ret.x, na.rm = TRUE),            # Standard deviation of market return
+    Rm_minus_Rf_sd = sd(rm_minus_rf, na.rm = TRUE), # Standard deviation of market return minus risk-free rate
+    gamma1_by_Rm_sd = mean(gamma1, na.rm = TRUE) / sd(port_ret.x, na.rm = TRUE),  # gamma1 / sd(Rm)
+    Rm_minus_Rf_by_Rm_sd = mean(rm_minus_rf, na.rm = TRUE) / sd(port_ret.x, na.rm = TRUE)  # (Rm - Rf) / sd(Rm)
+  ) |>
+  ungroup()
+
+# View the result for long periods
+View(table_4_long_periods)
+
+
+# Calculate statistics for short periods
+table_4_short_periods <- full_data_with_rf |>
+  group_by(short_period) |>
+  summarise(
+    Rm_mean = mean(port_ret.x, na.rm = TRUE),        # Mean of market return
+    Rm_minus_Rf_mean = mean(rm_minus_rf, na.rm = TRUE),  # Mean of market return minus risk-free rate
+    gamma1_mean = mean(gamma1, na.rm = TRUE),      # Mean of gamma1
+    gamma0_mean = mean(gamma0, na.rm = TRUE),      # Mean of gamma0
+    Rf_mean = mean(rf, na.rm = TRUE),             # Mean of risk-free rate
+    Rm_sd = sd(port_ret.x, na.rm = TRUE),            # Standard deviation of market return
+    Rm_minus_Rf_sd = sd(rm_minus_rf, na.rm = TRUE), # Standard deviation of market return minus risk-free rate
+    gamma1_by_Rm_sd = mean(gamma1, na.rm = TRUE) / sd(port_ret.x, na.rm = TRUE),  # gamma1 / sd(Rm)
+    Rm_minus_Rf_by_Rm_sd = mean(rm_minus_rf, na.rm = TRUE) / sd(port_ret.x, na.rm = TRUE)  # (Rm - Rf) / sd(Rm)
+  ) |>
+  ungroup()
+
+# View the result for short periods
+View(table_4_short_periods)
+
+
+# Calculate statistics for full period
+table_4_full_period <- full_data_with_rf |>
+  group_by(full_period) |>
+  summarise(
+    Rm_mean = mean(port_ret.x, na.rm = TRUE),        # Mean of market return
+    Rm_minus_Rf_mean = mean(rm_minus_rf, na.rm = TRUE),  # Mean of market return minus risk-free rate
+    gamma1_mean = mean(gamma1, na.rm = TRUE),      # Mean of gamma1
+    gamma0_mean = mean(gamma0, na.rm = TRUE),      # Mean of gamma0
+    Rf_mean = mean(rf, na.rm = TRUE),             # Mean of risk-free rate
+    Rm_sd = sd(port_ret.x, na.rm = TRUE),            # Standard deviation of market return
+    Rm_minus_Rf_sd = sd(rm_minus_rf, na.rm = TRUE), # Standard deviation of market return minus risk-free rate
+    gamma1_by_Rm_sd = mean(gamma1, na.rm = TRUE) / sd(port_ret.x, na.rm = TRUE),  # gamma1 / sd(Rm)
+    Rm_minus_Rf_by_Rm_sd = mean(rm_minus_rf, na.rm = TRUE) / sd(port_ret.x, na.rm = TRUE)  # (Rm - Rf) / sd(Rm)
+  ) |>
+  ungroup()
+
+# View the result for full periods
+View(table_4_full_period)
+
+
+# Function to round values to 4 decimal places and format as required
+format_table_4 <- function(data) {
+  data |>
+    mutate(
+      Rm_mean = round(Rm_mean, 4),
+      Rm_minus_Rf_mean = round(Rm_minus_Rf_mean, 4),
+      gamma1_mean = round(gamma1_mean, 4),
+      gamma0_mean = round(gamma0_mean, 4),
+      Rf_mean = round(Rf_mean, 4),
+      Rm_minus_Rf_by_Rm_sd = round(Rm_minus_Rf_by_Rm_sd, 4),
+      gamma1_by_Rm_sd = round(gamma1_by_Rm_sd, 4),
+      Rm_sd = round(Rm_sd, 4),
+      Rm_minus_Rf_sd = round(Rm_minus_Rf_sd, 4)
+    )
+}
+
+# Rename the period columns so they are consistent across all tables
+table_4_short_periods <- table_4_short_periods |> rename(period = short_period)
+table_4_long_periods <- table_4_long_periods |> rename(period = long_period)
+table_4_full_period <- table_4_full_period |> rename(period = full_period)
+
+# Combine all periods into a single table in the order shown in the reference table
+final_table_4 <- bind_rows(
+  table_4_full_period,
+  table_4_long_periods,
+  table_4_short_periods
+)
+
+# Select and arrange the columns in the correct order
+final_table_4 <- final_table_4 |>
+  select(
+    period, Rm_mean, Rm_minus_Rf_mean, gamma1_mean, gamma0_mean, Rf_mean,
+    Rm_minus_Rf_by_Rm_sd, gamma1_by_Rm_sd, Rm_sd, Rm_minus_Rf_sd
+  ) |>
+  arrange(period)
+
+# Apply the formatting function to round values to 4 decimal places
+final_table_4 <- final_table_4 |> format_table_4()
+
+# Print or view the final table
+print(final_table_4)
+View(final_table_4)
+
+
+
 
