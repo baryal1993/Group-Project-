@@ -1,1 +1,39 @@
-Description: This is Replication report for Fama McBeth 1973 done by closely following descrption of the original artcile with extension to 2023. 
+---
+title: "Fama_Mcbeth Report"
+author: "Wajeeha, Bibek"
+date: "2024-10-20"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+install.packages("tigerstats")
+library(tigerstats)
+library(knitr)
+opts_chunk$set(echo = FALSE)
+
+```
+# Introduction
+
+ The Fama and MacBeth (1973) study, titled "Risk, Return, and Equilibrium: Empirical Tests," is a seminal work in finance that provides a comprehensive examination of the relationship between risk and return in the stock market. Fama and MacBeth sought to statistically confirm the Capital Asset Pricing Model (CAPM), which postulates a linear relationship between expected return and risk, as measured by beta, using data from the New York Stock Exchange (NYSE) from 1926 to 1968. Their study is one of the seminal studies on the risk-return tradeoff and has had a significant impact on the evolution of asset pricing theory. We may compare the initial findings with more recent data and investigate if the main conclusions from Fama and MacBeth's work are still applicable in contemporary financial markets thanks to the replication of this study utilising updated data through 2023.
+ 
+In both the original study and the replication, a positive relationship between risk and return is evident. According to Fama and MacBeth, stocks with higher beta a metric that gauges how sensitive a stock is to changes in the market generally have higher projected returns. This confirms the CAPM's hypothesis that investors who assume more systematic risk will receive larger returns in exchange. This association is supported by the replication, which demonstrates that greater-beta portfolios continue to produce better average returns even in more recent times. This result holds true for different subperiods, confirming the basic risk-return tradeoff that the CAPM describes.
+
+# Market efficiency and the Risk Premium
+Fama and MacBeth also explored the concept of market efficiency. They proved that the market operates efficiently, and that historical data cannot reliably forecast future returns since stock prices reflect the information that is now accessible. The Efficient Market Hypothesis (EMH) is consistent with this. The assumption that markets remain mostly unpredictable in the short term and that prices rationally react to new knowledge is supported by the replication study's findings that stock prices continue to reflect information efficiently over time.
+
+The linearity of the risk-return relationship is among the most significant theoretical ramifications of the CAPM. Fama and MacBeth evaluated whether the link between beta and expected return follows a straight line in their original analysis, which offered compelling evidence in favour of this linearity. This conclusion is supported by the replication, which shows that even when data from more recent decades are included, the linear risk-return connection remains. This demonstrates how reliable the CAPM is, since it remains a key framework for comprehending the dynamics of risk and return in financial markets.
+
+Fama and MacBeth investigated the potential major impact of additional risk factors on projected returns, such as firm-specific risk or overall volatility. According to their first findings, other risk metrics do not offer any extra explanatory power, and beta alone is adequate to explain the cross-sectional variation in stock returns. The replication results corroborate this conclusion, demonstrating that firm-specific or overall risk is not a major factor in explaining returns above and beyond what beta can account for. This supports the idea that beta is still the primary factor influencing projected returns and that the CAPM is well-specified.
+
+# Methodological Consistency and Dynamic Risk-Return Relationship
+Fama and MacBeth's study made a significant methodological contribution by tackling the error-in-variables issue that arises when estimating beta. They created stock portfolios based on their beta estimates rather than depending on the noisy betas of individual equities. The estimation error was decreased, and more accurate estimations of the risk-return relationship were produced by this portfolio-based method. Using a comparable methodology, the replication study confirms that estimations at the portfolio level produce more reliable findings about the correlation between beta and projected returns. 
+
+The efficacy of the portfolio construction methodology in reducing estimation biases is demonstrated by the methodological consistency between the original and repeated research.
+Extending the data to more recent times is another crucial component of the replication, since it enables the analysis of the risk-return connection across various market regimes, including financial crisis and recovery phases. The replication results demonstrate that although the risk-return tradeoff is often valid, there are occasions when it is not, especially when people are under financial strain. For instance, when market volatility soars and investor mood drastically change during a worldwide financial crisis, the risk-return connection momentarily collapses. This result implies that although the CAPM is valid over the long term, the expected link between risk and return may be distorted by transient market disturbances.
+
+Lastly, the replication study offers fresh perspectives on how risk aversion changes over time. The replication offers more thorough proof that investor risk preferences change over time, even though the original Fama and MacBeth analysis recognised the fluctuation of the risk premium. The risk premium rises as a result of investors demanding a larger premium for keeping hazardous assets during uncertain economic times, like the financial crisis. This result is consistent with more recent advances in asset pricing theory that take into consideration the influence of time-varying risk preferences on market outcomes.
+
+# Conclusion
+The replication of Fama and MacBeth's (1973) study provides more information about how the risk-return relationship stays true in contemporary financial markets while also validating many of the original findings. The replication results confirm the market's efficiency, the positive correlation between risk and return, and the adequacy of beta as a predictor of returns. However, a more thorough understanding of how these linkages change over time especially during times of economic upheaval is made possible by the larger data set. These results demonstrate the value of taking dynamic market conditions into account when using asset pricing models, in addition to confirming the CAPM's ongoing applicability.

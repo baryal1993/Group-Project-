@@ -4,8 +4,195 @@ author: "Wajeeha(PhD)/Bibek(MRes)"
 date: "2024-10-17"
 output: html_document
 ---
+############ Table 1 ################
+```{r, table, echo = FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(gt)
+library(tidyr)
+summary_table <- read.csv("C:/test/MAF900/summary_table.csv")
+formatted_table <- tibble(
+  " " = c(
+    "Portfolio Formation Period",
+    "Initial Estimation Period",
+    "Testing Period",
+    "No. of Securities Available",
+    "No. of Securities Meeting Data Requirement"
+  ),
+  "1" = c(
+    summary_table$formation_period[1], 
+    summary_table$estimation_period[1], 
+    summary_table$testing_period[1], 
+    summary_table$total_securities[1], 
+    summary_table$securities_with_data_formation[1]
+  ),
+  "2" = c(
+    summary_table$formation_period[2], 
+    summary_table$estimation_period[2], 
+    summary_table$testing_period[2], 
+    summary_table$total_securities[2], 
+    summary_table$securities_with_data_formation[2]
+  ),
+  "3" = c(
+    summary_table$formation_period[3], 
+    summary_table$estimation_period[3], 
+    summary_table$testing_period[3], 
+    summary_table$total_securities[3], 
+    summary_table$securities_with_data_formation[3]
+  ),
+  "4" = c(
+    summary_table$formation_period[4], 
+    summary_table$estimation_period[4], 
+    summary_table$testing_period[4], 
+    summary_table$total_securities[4], 
+    summary_table$securities_with_data_formation[4]
+  ),
+  "5" = c(
+    summary_table$formation_period[5], 
+    summary_table$estimation_period[5], 
+    summary_table$testing_period[5], 
+    summary_table$total_securities[5], 
+    summary_table$securities_with_data_formation[5]
+  ),
+  "6" = c(
+    summary_table$formation_period[6], 
+    summary_table$estimation_period[6], 
+    summary_table$testing_period[6], 
+    summary_table$total_securities[6], 
+    summary_table$securities_with_data_formation[6]
+  ),
+  "7" = c(
+    summary_table$formation_period[7], 
+    summary_table$estimation_period[7], 
+    summary_table$testing_period[7], 
+    summary_table$total_securities[7], 
+    summary_table$securities_with_data_formation[7]
+  ),
+  "8" = c(
+    summary_table$formation_period[8], 
+    summary_table$estimation_period[8], 
+    summary_table$testing_period[8], 
+    summary_table$total_securities[8], 
+    summary_table$securities_with_data_formation[8]
+  ),
+  "9" = c(
+    summary_table$formation_period[9], 
+    summary_table$estimation_period[9], 
+    summary_table$testing_period[9], 
+    summary_table$total_securities[9], 
+    summary_table$securities_with_data_formation[9]
+  ),
+  "10" = c(
+    summary_table$formation_period[10], 
+    summary_table$estimation_period[10], 
+    summary_table$testing_period[10], 
+    summary_table$total_securities[10], 
+    summary_table$securities_with_data_formation[10]
+  ),
+  "11" = c(
+    summary_table$formation_period[11], 
+    summary_table$estimation_period[11], 
+    summary_table$testing_period[11], 
+    summary_table$total_securities[11], 
+    summary_table$securities_with_data_formation[11]
+  ),
+  "12" = c(
+    summary_table$formation_period[12], 
+    summary_table$estimation_period[12], 
+    summary_table$testing_period[12], 
+    summary_table$total_securities[12], 
+    summary_table$securities_with_data_formation[12]
+  ),
+  "13" = c(
+    summary_table$formation_period[13], 
+    summary_table$estimation_period[13], 
+    summary_table$testing_period[13], 
+    summary_table$total_securities[13], 
+    summary_table$securities_with_data_formation[13]
+  ),
+  "14" = c(
+    summary_table$formation_period[14], 
+    summary_table$estimation_period[14], 
+    summary_table$testing_period[14], 
+    summary_table$total_securities[14], 
+    summary_table$securities_with_data_formation[14]
+  ),
+  "15" = c(
+    summary_table$formation_period[15], 
+    summary_table$estimation_period[15], 
+    summary_table$testing_period[15], 
+    summary_table$total_securities[15], 
+    summary_table$securities_with_data_formation[15]
+  ),
+  "16" = c(
+    summary_table$formation_period[16], 
+    summary_table$estimation_period[16], 
+    summary_table$testing_period[16], 
+    summary_table$total_securities[16], 
+    summary_table$securities_with_data_formation[16]
+  ),
+  "17" = c(
+    summary_table$formation_period[17], 
+    summary_table$estimation_period[17], 
+    summary_table$testing_period[17], 
+    summary_table$total_securities[17], 
+    summary_table$securities_with_data_formation[17]
+  ),
+  "18" = c(
+    summary_table$formation_period[18], 
+    summary_table$estimation_period[18], 
+    summary_table$testing_period[18], 
+    summary_table$total_securities[18], 
+    summary_table$securities_with_data_formation[18]
+  ),
+  "19" = c(
+    summary_table$formation_period[19], 
+    summary_table$estimation_period[19], 
+    summary_table$testing_period[19], 
+    summary_table$total_securities[19], 
+    summary_table$securities_with_data_formation[19]
+  ),
+  "20" = c(
+    summary_table$formation_period[20], 
+    summary_table$estimation_period[20], 
+    summary_table$testing_period[20], 
+    summary_table$total_securities[20], 
+    summary_table$securities_with_data_formation[20]
+  ),
+  "21" = c(
+    summary_table$formation_period[21], 
+    summary_table$estimation_period[21], 
+    summary_table$testing_period[21], 
+    summary_table$total_securities[21], 
+    summary_table$securities_with_data_formation[21]
+  ),
+  "22" = c(
+    summary_table$formation_period[22], 
+    summary_table$estimation_period[22], 
+    summary_table$testing_period[22], 
+    summary_table$total_securities[22], 
+    summary_table$securities_with_data_formation[22]
+  ),
+  "23" = c(
+    summary_table$formation_period[23], 
+    summary_table$estimation_period[23], 
+    summary_table$testing_period[23], 
+    summary_table$total_securities[23], 
+    summary_table$securities_with_data_formation[23]
+  )
+)
 
-#Table
+# Display the table using gt for more advanced formatting
+formatted_table %>%
+  gt() %>%
+  tab_header(
+    title = "Portfolio Formation, Estimation, and Testing Periods",
+    subtitle = "Summary of periods and securities"
+  )
+
+```
+########## Table 2 ##############
 
 ```{r, table, echo=FALSE}
 library(knitr)
@@ -521,4 +708,239 @@ kable(combined_table_with_headers, format = "html", col.names = c("Statistic", p
   add_header_above(c(" " = 1, "Table 2 (continue)" = 10), bold = TRUE) %>%  # Title for the selected periods
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
   row_spec(c(1, 9, 17, 25, 33, 41), bold = TRUE, background = "#D3D3D3", align = "c")
+```
+
+############### Table 3 #################
+
+```{r, table, echo=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(gt)
+library(tidyr)
+Panel_A <- read.csv("C:/test/MAF900/Panel_A.csv")
+Panel_A[] <- lapply(Panel_A, function(x) if(is.numeric(x)) round(x, 4) else x)
+
+# Insert a row for "Panel A" aligned to the left side
+panel_a_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_A)))  # Create a row with the same number of columns
+colnames(panel_a_row) <- colnames(Panel_A)  # Ensure that column names match
+panel_a_row[1, 1] <- "Panel A"  # Add "Panel A" text in the first column
+
+# Combine Panel A data with the inserted "Panel A" row
+Panel_A <- rbind(panel_a_row, Panel_A)
+
+# Create a table with HTML and LaTeX output for Panel A
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_A, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    add_header_above(c(" " = 1, "Summary Result for the Regression" = 10)) %>%  # Header for Panel A
+    add_header_above(c(" " = 1, "Table 3" = 10), bold = TRUE) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%  # Removed 'striped'
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel A" to the left
+    row_spec(2:nrow(Panel_A), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_A, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_2)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    add_header_above(c(" " = 1, "Summary Result for the Regression" = 10)) %>%
+    add_header_above(c(" " = 1, "Table 3" = 10), bold = TRUE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel A" to the left
+    row_spec(2:nrow(Panel_A), bold = FALSE)
+}
+Panel_B <- read.csv("C:/test/MAF900/Panel_B.csv")
+Panel_B[] <- lapply(Panel_B, function(x) if(is.numeric(x)) round(x, 5) else x)
+
+# Insert a row for "Panel B" aligned to the left side
+panel_b_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_B)))  # Create a row with the same number of columns
+colnames(panel_b_row) <- colnames(Panel_B)  # Ensure that column names match
+panel_b_row[1, 1] <- "Panel B"  # Add "Panel B" text in the first column
+
+# Combine Panel B data with the inserted "Panel B" row
+Panel_B <- rbind(panel_b_row, Panel_B)
+
+# Create a table with HTML and LaTeX output for Panel B
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_B, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>2</sub>", 
+                      "&gamma;<sub>3</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "s(&gamma;<sub>2</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel B" to the left
+    row_spec(2:nrow(Panel_B), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_B, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_2$", 
+          "$\\gamma_3$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_2)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel B" to the left
+    row_spec(2:nrow(Panel_B), bold = FALSE)
+}
+
+Panel_c <- read.csv("C:/test/MAF900/Panel_C.csv")
+Panel_C[] <- lapply(Panel_C, function(x) if(is.numeric(x)) round(x, 4) else x)
+
+# Insert a row for "Panel C" aligned to the left side
+panel_c_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_C)))  # Create a row with the same number of columns
+colnames(panel_c_row) <- colnames(Panel_C)  # Ensure that column names match
+panel_c_row[1, 1] <- "Panel C"  # Add "Panel C" text in the first column
+
+# Combine Panel C data with the inserted "Panel C" row
+Panel_C <- rbind(panel_c_row, Panel_C)
+
+# Create a table with HTML and LaTeX output for Panel C
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_C, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>2</sub>", 
+                      "&gamma;<sub>3</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "s(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel C" to the left
+    row_spec(2:nrow(Panel_C), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_C, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_2$", 
+          "$\\gamma_3$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_3)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_3)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel C" to the left
+    row_spec(2:nrow(Panel_C), bold = FALSE)
+}
+
+Panel_D <- read.csv("C:/test/MAF900/Panel_D.csv")
+Panel_D[] <- lapply(Panel_D, function(x) if(is.numeric(x)) round(x, 4) else x)
+
+# Insert a row for "Panel D" aligned to the left side
+panel_d_row <- data.frame(matrix("", nrow = 1, ncol = ncol(Panel_D)))  # Create a row with the same number of columns
+colnames(panel_d_row) <- colnames(Panel_D)  # Ensure that column names match
+panel_d_row[1, 1] <- "Panel D"  # Add "Panel D" text in the first column
+
+# Combine Panel D data with the inserted "Panel D" row
+Panel_D <- rbind(panel_d_row, Panel_D)
+
+# Create a table with HTML and LaTeX output for Panel D
+if (knitr::is_html_output()) {
+  # For HTML output
+  kable(Panel_D, format = "html", escape = FALSE, 
+        col.names = c("Period", 
+                      "&gamma;<sub>0</sub>", 
+                      "&gamma;<sub>1</sub>", 
+                      "&gamma;<sub>2</sub>", 
+                      "&gamma;<sub>3</sub>", 
+                      "&gamma;<sub>0</sub> - R<sub>f</sub>", 
+                      "s(&gamma;<sub>0</sub>)", 
+                      "s(&gamma;<sub>1</sub>)", 
+                      "s(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub>)", 
+                      "t(&gamma;<sub>1</sub>)", 
+                      "t(&gamma;<sub>3</sub>)", 
+                      "t(&gamma;<sub>0</sub> - R<sub>f</sub>)", 
+                      "R<sup>2</sup>", 
+                      "s(R<sup>2</sup>)")) %>%
+    kable_styling(bootstrap_options = c("hover", "condensed"), full_width = FALSE) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel D" to the left
+    row_spec(2:nrow(Panel_D), bold = FALSE, background = "#FFFFFF", align = "c")
+  
+} else {
+  # For LaTeX output
+  kable(Panel_D, format = "latex", booktabs = TRUE, 
+        col.names = c(
+          "Period", 
+          "$\\gamma_0$", 
+          "$\\gamma_1$", 
+          "$\\gamma_2$", 
+          "$\\gamma_3$", 
+          "$\\gamma_0 - R_f$", 
+          "$s(\\gamma_0)$", 
+          "$s(\\gamma_1)$", 
+          "$s(\\gamma_3)$", 
+          "$t(\\gamma_0)$", 
+          "$t(\\gamma_1)$", 
+          "$t(\\gamma_3)$", 
+          "$t(\\gamma_0 - R_f)$", 
+          "$R^2$", 
+          "$s(R^2)$"
+        )) %>%
+    row_spec(1, align = "l", bold = TRUE, background = "#F0F0F0") %>%  # Align "Panel D" to the left
+    row_spec(2:nrow(Panel_D), bold = FALSE)
+}
 ```
