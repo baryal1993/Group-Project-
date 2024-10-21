@@ -113,35 +113,35 @@ periods <- tibble(
     formation_period = character(),
     estimation_period = character(),
     testing_period = character(),
-    total_securities = integer(),
-    securities_with_data_formation = integer(),
-    securities_with_data_estimation = integer()
+    No_of_Securities_Available = integer(),
+    No_of_Securities_meeting_data_requirement = integer()
   )
   
   for (i in 1:nrow(periods)) {
     print(paste("Processing period:", i))  
     
     # Portfolio formation period
-    port_form_bdate <- periods$formation_start[i]
-    port_form_edate <- periods$formation_end[i]
+    port_form_bdate <- as.Date(periods$formation_start[i])
+    port_form_edate <- as.Date(periods$formation_end[i])
     
     # Estimation period
-    est_start <- periods$estimation_start[i]
-    est_end <- periods$estimation_end[i]
+    est_start <- as.Date(periods$estimation_start[i])
+    est_end <- as.Date(periods$estimation_end[i])
     
     formation_data <- fm_data |> 
       filter(between(date, port_form_bdate, port_form_edate)) |> 
       select(permno, date, ret, fsi_rm)
-  
+    
     estimation_data <- fm_data |> 
       filter(between(date, est_start, est_end)) |> 
       select(permno, date, ret, fsi_rm)
     
+    # Calculate total stocks (all securities available during the formation period)
     total_stocks <- formation_data |> 
       distinct(permno) |> 
       nrow()
     
-    # Calculate the number of securities 
+    # Calculate the number of securities that meet the data requirement (at least 48 observations)
     securities_with_data_formation <- formation_data |> 
       group_by(permno) |> 
       filter(n() >= 48) |>  # Filter securities with at least 48 observations in formation period
@@ -149,28 +149,30 @@ periods <- tibble(
       distinct(permno) |> 
       nrow()
     
-    securities_with_data_estimation <- estimation_data |> 
-      group_by(permno) |> 
-      filter(n() >= 60) |>  # Filter securities with at least 60 observations in estimation period
-      ungroup() |> 
-      distinct(permno) |> 
-      nrow()
-  
+    # Add row to the summary table
     summary_table <- summary_table |> add_row(
       period = i,
       formation_period = paste0(year(port_form_bdate), "-", year(port_form_edate)),
       estimation_period = paste0(year(est_start), "-", year(est_end)),
       testing_period = paste0(year(periods$testing_start[i]), "-", year(periods$testing_end[i])),
-      total_securities = total_stocks,
-      securities_with_data_formation = securities_with_data_formation,
-      securities_with_data_estimation = securities_with_data_estimation
+      No_of_Securities_Available = total_stocks,
+      No_of_Securities_meeting_data_requirement = securities_with_data_formation
     )
   }
-  summary_table <- summary_table |> distinct()
-  print(summary_table)
- 
+
+  # Transpose the summary table, keeping the original row names as column headers
+  transposed_table <- as.data.frame(t(summary_table), stringsAsFactors = FALSE)
+  
+  # Rename the columns using the first row as column headers, then remove the first row
+  colnames(transposed_table) <- transposed_table[1, ]
+  transposed_table <- transposed_table[-1, ]
+  
+  # Display the transposed table using knitr's kable
+  kable(transposed_table, caption = "Table 1 Portfolio Formation, Estimation and Testing Period") %>%
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+  
 ### Table 1 created.   
-### End of table 1.  
+### End of table 1.
  
  
 ########Table 2 Portfolio for Estimation########
