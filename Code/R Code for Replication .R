@@ -1707,12 +1707,9 @@ final_table_4 <- final_table_4 |>
 # Dropcolumn labels (short_period, long_period, full_period)
 final_table_4 <- final_table_4 |> select(-short_period, -long_period, -full_period)
 
-<<<<<<< HEAD
-=======
 # View the final table without duplicates and with all columns
 print(final_table_4)
 View(final_table_4)
 
 ### Completed###
 ### Thank you. 
->>>>>>> 661fa20aa60f6578348906b4f0c60d740858911b
